@@ -1,0 +1,55 @@
+class VoteInfo:
+    id = None 
+    round = None # Id and round of block
+    parent_id= None
+    parent_round = None # Id and round of parent
+    exec_state_id = None # Speculated execution state
+
+# speculated new committed state to vote directly on
+class LedgerCommitInfo:
+    commit_state_id = None # ⊥ if no commit happens when this vote is aggregated to QC
+    vote_info_hash = None # Hash of VoteMsg.vote info
+
+class VoteMsg:
+    vote_info = None # A VoteInfo record
+    ledger_commit_info = None # Speculated ledger info
+    high_commit_qc = None # QC to synchronize on committed blocks
+    sender = u # Added automatically when constructed
+    signature = signu(ledger_commit_info) # Signed automatically when constructed
+
+# QC is a VoteMsg with multiple signatures
+class QC:
+    vote_info = None
+    ledger_commit_info = None
+    signatures = None #A quorum of signatures
+    author = u # The validator that produced the qc
+    author_signature = signu(signatures)
+
+class Block:
+    author = None #The author of the block, may not be the same as qc.author after view-change
+    round = None #Yhe round that generated this proposal
+    payload = None #Proposed transaction(s)
+    qc # QC for parent block
+    id # A unique digest of author, round, payload, qc.vote info.id and qc.signatures
+
+class TimeoutInfo:
+    round = None
+    high_qc = None
+    sender = u # Added automatically when constructed
+    signature = signu(round, high_qc.round) # Signed automatically when constructed
+
+class TC:
+    round = None # All timeout messages that form TC have the same round
+    tmo_high_qc_rounds = None # A vector of 2f + 1 high qc round numbers of timeout messages that form TC
+    tmo_signatures = None # A vector of 2f + 1 validator signatures on (round, respective high qc round)
+
+class TimeoutMsg:
+    tmo_info = None # TimeoutInfo for some round with a high qc
+    last_round_tc = None # TC for tmo info.round − 1 if tmo info.high qc.round 6= tmo info.round − 1, else ⊥
+    high_commit_qc = None # QC to synchronize on committed blocks
+
+class ProposalMsg:
+    block = None
+    last_round_tc = None # TC for block.round − 1 if block.qc.vote info.round 6= block.round − 1, else ⊥
+    high_commit_qc = None # QC to synchronize on committed blocks
+    signature =  signu(block.id)
