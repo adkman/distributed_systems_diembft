@@ -1,0 +1,21 @@
+class Mempool:
+
+    def __init__(self):
+        self.pending_txns = {}
+
+    def add_transactions(self, txns):
+        self.pending_txns.update(txns)
+
+    def get_transactions(self):
+        send_txns = dict(self.pending_txns)
+        self.pending_txns.clear()
+        return send_txns
+
+def main():
+    mempool = Mempool()
+    mempool.add_transactions({1:"one"})
+    mempool.add_transactions({2:"one"})
+    mempool.add_transactions({1:"two"})
+    print(mempool.get_transactions())
+    print(mempool.get_transactions())
+    # print(Safety.tp())
