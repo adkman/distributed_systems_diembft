@@ -4,14 +4,14 @@ from utilities import TC
 
 class Pacemaker:
 
-    def __init__(self, cur_rnd=0, last_rnd=None, pend=[]):
+    def __init__(self):
 
-        self.current_round = cur_rnd  # Initially zero
-        self.last_round_tc = last_rnd  # Initially None
-        self.pending_timeouts = pend  # Timeouts per rounda
+        self.current_round = 0  # Initially zero
+        self.last_round_tc = None  # Initially None
+        self.pending_timeouts = dict()  # Timeouts per rounda
 
         # Where do we calculate F
-        self.f = 2
+        self.f = 1
 
     def get_round_timer(self, r):
         # Know what to keep in delta ------------- TODO ------------
