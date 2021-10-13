@@ -1,55 +1,67 @@
+from typing import Sized
+
+
 class VoteInfo:
-    id = None 
-    round = None # Id and round of block
-    parent_id= None
-    parent_round = None # Id and round of parent
-    exec_state_id = None # Speculated execution state
+    def __init__(self, id = None, rnd = None, pid = None, prnd = None, exe_id = None):
+        self.id = id 
+        self.round = rnd # Id and round of block
+        self.parent_id= pid
+        self.parent_round = prnd # Id and round of parent
+        self.exec_state_id = exe_id # Speculated execution state
 
 # speculated new committed state to vote directly on
 class LedgerCommitInfo:
-    commit_state_id = None # ⊥ if no commit happens when this vote is aggregated to QC
-    vote_info_hash = None # Hash of VoteMsg.vote info
+    def __init__(self, cid = None, vhash = None):
+        self.commit_state_id = cid # ⊥ if no commit happens when this vote is aggregated to QC
+        self.vote_info_hash = vhash # Hash of VoteMsg.vote info
 
 class VoteMsg:
-    vote_info = None # A VoteInfo record
-    ledger_commit_info = None # Speculated ledger info
-    high_commit_qc = None # QC to synchronize on committed blocks
-    sender = u # Added automatically when constructed
-    signature = signu(ledger_commit_info) # Signed automatically when constructed
+    def __init__(self, vinfo = None, ledinfo = None, hcmtqc = None ) -> None:
+        self.vote_info = vinfo # A VoteInfo record
+        self.ledger_commit_info = ledinfo # Speculated ledger info
+        self.high_commit_qc = hcmtqc # QC to synchronize on committed blocks
+        self.sender = u # Added automatically when constructed
+        self.signature = signu(ledger_commit_info) # Signed automatically when constructed
 
 # QC is a VoteMsg with multiple signatures
 class QC:
-    vote_info = None
-    ledger_commit_info = None
-    signatures = None #A quorum of signatures
-    author = u # The validator that produced the qc
-    author_signature = signu(signatures)
+    def __init__(self, vinfo = None, led_cmt_info = None,sig = None) -> None:
+        self.vote_info = vinfo
+        self.ledger_commit_info = led_cmt_info
+        self.signatures = sig #A quorum of signatures
+        self.author = u # The validator that produced the qc
+        self.author_signature = signu(signatures)
 
 class Block:
-    author = None #The author of the block, may not be the same as qc.author after view-change
-    round = None #Yhe round that generated this proposal
-    payload = None #Proposed transaction(s)
-    qc # QC for parent block
-    id # A unique digest of author, round, payload, qc.vote info.id and qc.signatures
+    def __init__(self, ath = None, rnd = None, pay = None) -> None:
+        self.author = ath #The author of the block, may not be the same as qc.author after view-change
+        self.round = rnd #Yhe round that generated this proposal
+        self.payload = pay #Proposed transaction(s)
+        self.qc # QC for parent block
+        self.id # A unique digest of author, round, payload, qc.vote info.id and qc.signatures
 
 class TimeoutInfo:
-    round = None
-    high_qc = None
-    sender = u # Added automatically when constructed
-    signature = signu(round, high_qc.round) # Signed automatically when constructed
+    def __init__(self) -> None:
+        self.round = None
+        self.high_qc = None
+        self.sender = u # Added automatically when constructed
+        self.signature = signu(round, high_qc.round) # Signed automatically when constructed
 
 class TC:
-    round = None # All timeout messages that form TC have the same round
-    tmo_high_qc_rounds = None # A vector of 2f + 1 high qc round numbers of timeout messages that form TC
-    tmo_signatures = None # A vector of 2f + 1 validator signatures on (round, respective high qc round)
+    def __init__(self) -> None:
+        self.round = None # All timeout messages that form TC have the same round
+        self.tmo_high_qc_rounds = None # A vector of 2f + 1 high qc round numbers of timeout messages that form TC
+        self.tmo_signatures = None # A vector of 2f + 1 validator signatures on (round, respective high qc round)
 
 class TimeoutMsg:
-    tmo_info = None # TimeoutInfo for some round with a high qc
-    last_round_tc = None # TC for tmo info.round − 1 if tmo info.high qc.round 6= tmo info.round − 1, else ⊥
-    high_commit_qc = None # QC to synchronize on committed blocks
+    def __init__(self) -> None:
+        self.tmo_info = None # TimeoutInfo for some round with a high qc
+        self.last_round_tc = None # TC for tmo info.round − 1 if tmo info.high qc.round 6= tmo info.round − 1, else ⊥
+        self.high_commit_qc = None # QC to synchronize on committed blocks
 
 class ProposalMsg:
-    block = None
-    last_round_tc = None # TC for block.round − 1 if block.qc.vote info.round 6= block.round − 1, else ⊥
-    high_commit_qc = None # QC to synchronize on committed blocks
-    signature =  signu(block.id)
+    def __init__(self) -> None:
+        self.block = None
+        self.last_round_tc = None # TC for block.round − 1 if block.qc.vote info.round 6= block.round − 1, else ⊥
+        self.high_commit_qc = None # QC to synchronize on committed blocks
+        self.signature =  signu(block.id)
