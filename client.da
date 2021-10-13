@@ -18,7 +18,7 @@ class Client(process):
             send(('request', req), to=validators)
 
             await(i in final_results)
-            output('Got response')
+            output('Got final response')
             time.sleep(sleep_time)
 
         send(('Done',), to=parent())
