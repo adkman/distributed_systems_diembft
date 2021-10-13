@@ -1,14 +1,16 @@
+# from 
 class BlockTree:
-    pending_block_tree = [] # tree of blocks pending commitment
-    pending_votes = None # collected votes per block indexed by their LedgerInfo hash
-    high_qc = None # highest known QC
-    high_commit_qc = None # highest QC that serves as a commit certificate
+    def __init__(self):
+        pending_block_tree = [] # tree of blocks pending commitment
+        pending_votes = None # collected votes per block indexed by their LedgerInfo hash
+        high_qc = None # highest known QC
+        high_commit_qc = None # highest QC that serves as a commit certificate
 
-    def execute_and_insert(b):
+    def execute_and_insert(self,b):
         Ledger.speculate(b.qc.block_id, b.id, b.payload)
-        pending_block_tree.add(b)
+        self.pending_block_tree.add(b)
 
-    def generate_block(txns, current_round):
+    def generate_block(self,txns, current_round):
         return Block(
             author = u,
             round = current_round,
@@ -17,24 +19,24 @@ class BlockTree:
             #id = hash(author || round || payload || qc.vote info.id || qc.signatures) 
             )
 
-    def process_vote(v):
-        process_qc(v.high_commit_qc)
+    def process_vote(self,v):
+        self.process_qc(v.high_commit_qc)
         vote_idx = hash(v.ledger_commit_info)
-        pending_votes[vote_idx] = pending_votes[vote_idx].add(v.signature)
-        if len(pending_votes[vote_idx]) == 2*f + 1:
+        self.pending_votes[vote_idx] = self.pending_votes[vote_idx].add(v.signature)
+        if len(self.pending_votes[vote_idx]) == 2*f + 1:
             qc = QC(
             vote_info = v.vote_info,
             state_id = v.state_id,
-            votes = pending_votes[vote_idx]
+            votes = self.pending_votes[vote_idx]
             )
             return qc
         return None
 
-    def process_qc(qc):
+    def process_qc(self,qc):
         if qc.ledger_commit_info.commit_state_id != None:
             Ledger.commit(qc.vote_info.parent_id)
-            pending_block_tree.prune(qc.vote_info.parent_id) # parent id becomes the new root of pending
+            self.pending_block_tree.prune(qc.vote_info.parent_id) # parent id becomes the new root of pending
             #high_commit_qc = maxround{qc, high_x_qc}
-            high_commit_qc = max(qc, high_commit_qc)
-        high_qc = max(qc, high_qc)
+            self.high_commit_qc = max(qc, self.high_commit_qc)
+        self.high_qc = max(qc, self.high_qc)
 
