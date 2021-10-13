@@ -1,0 +1,49 @@
+from validator import Validator
+from client import Client
+
+
+class RunDiemBFT(process):
+
+    def setup(config):
+        self.nvalidators = int(config['nvalidators'])
+        self.nfaulty = int(config['nfaulty'])
+        self.nclients = int(config['nclients'])
+        self.nclientops = int(config['nclientops'])
+
+    def run():
+        validators = new(Validator, num=nvalidators)
+        for i, v in enumerate(validators):
+            setup({v}, (i, validators))
+
+        clients = new(Client, num=nclients)
+        for c in clients:
+            setup({c}, (validators, nclientops))
+
+        start(validators)
+        start(clients)
+
+        await(each(c in clients, has=received(('Done',), from_=c)))
+        output("All validators done.")
+        send(('Done',), to=validators)
+
+
+def is_config_valid(config):
+    if int(config['nvalidators']) < (3 * int(config['nfaulty']) + 1):
+        output(
+            "Number of validators should be more than thrice of number of faulty validators.")
+        return False
+    return True
+
+
+def main():
+    # read config from Run.setup file
+    configs = [{'nvalidators': 4, 'nfaulty': 1, 'nclients': 2, 'nclientops': 3}]
+    for config in configs:
+        if not is_config_valid(config):
+            output("The provided config", config,
+                   "is not valid. Skipping this config.")
+            continue
+        p = new(RunDiemBFT)
+        setup(p, (config,))
+        start(p)
+    output("All configs executed!")

@@ -1,0 +1,25 @@
+class Validator (process):
+
+    def setup(validator_id: int, validators_set: set):
+        self.validators = list(validators_set)
+
+    def run():
+        if validator_id != 0:
+            output("Sending vote to leader ",
+                   self.validators[0], " from ", self.validator_id)
+            send(('VoteMsg', "vote"), to=self.validators[0])
+        else:
+            send(('Ack',), to=self.validators[0])
+        await(received(('Done',), from_=parent()))
+
+    def receive(msg=('VoteMsg', param), from_=voter):
+        output("Received vote from ", voter, param)
+        output("Sending Ack to voter", voter)
+        send(('Ack',), to=voter)
+
+    def receive(msg=('Ack',), from_=leader):
+        output("Received ack from leader ", leader)
+
+    def receive(msg=('request', req), from_=client):
+        output("received request from client", req)
+        send(('response', req), to=client)

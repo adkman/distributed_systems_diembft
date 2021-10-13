@@ -1,0 +1,36 @@
+import time
+
+class Client(process):
+
+    def setup(validators: set, nops: int):
+        self.results = dict()
+        self.final_results = set()
+        self.sleep_time = 1
+
+
+    def run():
+        for i in range(nops):
+            results[i] = []
+            req = {
+                'req_id': i,
+                'request': "txn"
+            }
+            send(('request', req), to=validators)
+
+            await(i in final_results)
+            output('Got response')
+            time.sleep(sleep_time)
+
+        send(('Done',), to=parent())
+
+
+    def receive(msg=('response', resp)):
+        output("got response", resp)
+        results[resp['req_id']].append(resp)
+        resp_cert = True
+        # check if f + 1 identical in results for request_id
+        if resp_cert:
+            final_results.add(resp['req_id'])
+
+
+
