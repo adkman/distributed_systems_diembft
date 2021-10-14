@@ -1,24 +1,65 @@
+from pacemaker import Pacemaker
+from leader import LeaderElection
+from blocktree import BlockTree
+from mempool import MemPool
+from safety import Safety
+from utilities import ProposalMsg
+
+
 class Validator (process):
 
-    def setup(validator_id: int, validators_set: set):
-        self.validators = list(validators_set)
+    def setup(this_validator, replicas: set): pass
 
     def run():
-        if validator_id != 0:
-            output("Sending vote to leader ",
-                   self.validators[0], " from ", self.validator_id)
-            send(('VoteMsg', "vote"), to=self.validators[0])
-        else:
-            send(('Ack',), to=self.validators[0])
         await(received(('Done',), from_=parent()))
 
-    def receive(msg=('VoteMsg', param), from_=voter):
-        output("Received vote from ", voter, param)
-        output("Sending Ack to voter", voter)
-        send(('Ack',), to=voter)
+    def process_certificate_qc(qc):
+        BlockTree.process_qc(qc)
+        LeaderElection.update_leaders(qc)
+        Pacemaker.advance_round(qc.vote_info.round)
 
-    def receive(msg=('Ack',), from_=leader):
-        output("Received ack from leader ", leader)
+    def process_new_round_event(last_tc):
+        if self.this_validator == LeaderElection.get_leader(Pacemaker.current_round):
+            block = BlockTree.generate_block(
+                MemPool.get_transactions(), Pacemaker.current_round)
+            proposal_msg = ProposalMsg(
+                block=block,
+                last_round_tc=last_tc,
+                high_commit_qc=BlockTree.high_commit_qc
+            )
+            send(('ProposalMsg', proposal_msg), to=self.replicas)
+
+    def receive(msg=('LocalTimeout',)):
+        Pacemaker.local_timeout_round()
+
+    def receive(msg=('ProposalMsg', proposal_msg), from_=p):
+        process_certificate_qc(proposal_msg.block.qc)
+        process_certificate_qc(proposal_msg.high_commit_qc)
+        Pacemaker.advance_round_tc(proposal_msg.last_round_tc)
+        round = Pacemaker.current_round
+        leader = LeaderElection.get_leader(round)
+        if proposal_msg.block.round != round or proposal_msg.sender != leader or proposal_msg.block.author != leader:
+            return
+        BlockTree.execute_and_insert(proposal_msg)
+        vote_msg = Safety.make_vote(
+            proposal_msg.block, proposal_msg.last_round_tc)
+        if vote_msg is not None:
+            send(('VoteMsg', vote_msg), to=LeaderElection.get_leader(round + 1))
+
+    def receive(msg=('VoteMsg', vote_msg), from_=p):
+        qc = BlockTree.process_vote(vote_msg)
+        if qc is not None:
+            process_certificate_qc(qc)
+            process_new_round_event(None)
+
+    def receive(msg=('TimeoutMsg', timeout_msg), from_=p):
+        process_certificate_qc(timeout_msg.tmo_info.high_qc)
+        process_certificate_qc(timeout_msg.high_commit_qc)
+        Pacemaker.advance_round_tc(timeout_msg.last_round_tc)
+        tc = Pacemaker.process_remote_timeout(timeout_msg)
+        if tc is not None:
+            Pacemaker.advance_round_tc(tc)
+            process_new_round_event(tc)
 
     def receive(msg=('request', req), from_=client):
         output("received request from client", req)

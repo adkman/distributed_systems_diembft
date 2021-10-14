@@ -1,56 +1,63 @@
+from blocktree import BlockTree
+from safety import Safety
+from utilities import TC
+
 class Pacemaker:
 
-    def __init__(self, cur_rnd = 0, last_rnd = None, pend = []) -> None:
-        
-        current_round = cur_rnd # Initially zero
-        last_round_tc = last_rnd # Initially None
-        pending_timeouts = pend # Timeouts per rounda
+    def __init__(self):
+
+        self.current_round = 0  # Initially zero
+        self.last_round_tc = None  # Initially None
+        self.pending_timeouts = dict()  # Timeouts per rounda
 
         # Where do we calculate F
-        f = 2 
-        
+        self.f = 1
 
-    def get_round_timer(self,r):
-        return 4*(244) # Know what to keep in delta ------------- TODO ------------
+    def get_round_timer(self, r):
+        # Know what to keep in delta ------------- TODO ------------
+        return 4*(244)
 
-    def start_timer(self,new_round):
+    def start_timer(self, new_round):
         # stop_timer(current_round)  ------------- TODO ------------
         self.current_round = new_round
         # start_local_timer for round current round for duration get_round_timer(current_round) ------------- TODO ------------
     # Do we have to create a handler that continues checks if that particular rounds duration is exceded or not
     # Do we have to implement our own method for stop_timer(round)
 
-
     def local_timeout_round(self):
         # save consensus state() ------- Asked to neglect this line
-        timeout_info = Safety.make_timeout(self.current_round, BlockTree.high_qc, self.last_round_tc)
+        timeout_info = Safety.make_timeout(
+            self.current_round, BlockTree.high_qc, self.last_round_tc)
         # broadcast TimeoutMsg( timeout_info, last_round_tc, BlockTree.high_commit_qc) ------------- TODO ------------
 
-    def process_remote_timeout(self,tmo):
-        tmo_info =  tmo.tmo_info
+    def process_remote_timeout(self, tmo):
+        tmo_info = tmo.tmo_info
         if tmo_info.round < self.current_round:
             return None
         if tmo_info.sender not in self.pending_timeouts[tmo_info.round].senders:
-            self.pending_timeouts[tmo_info.round] = self.pending_timeouts[tmo_info.round].add(tmo_info)
-        if len(self.pending_timeouts[tmo_info.round].senders) == f + 1:
-            stop_timer(self.current_round)
-            self.local_timeout_round() # Bracha timeout
-        if len(self.pending_timeouts[tmo_info.round].senders) == 2*f + 1:
+            self.pending_timeouts[tmo_info.round] = self.pending_timeouts[tmo_info.round].add(
+                tmo_info)
+        if len(self.pending_timeouts[tmo_info.round].senders) == self.f + 1:
+            # stop_timer(self.current_round) TODO
+            self.local_timeout_round()  # Bracha timeout
+        if len(self.pending_timeouts[tmo_info.round].senders) == 2*self.f + 1:
             return TC(
-                round = tmo_info.round,
-                tmo_high_qc_rounds = (t.high_qc.round for t in self.pending_timeouts[tmo_info.round]),
-                signatures = (t.signature for t in self.pending_timeouts[tmo_info.round])
+                round=tmo_info.round,
+                tmo_high_qc_rounds=(
+                    t.high_qc.round for t in self.pending_timeouts[tmo_info.round]),
+                signatures=(
+                    t.signature for t in self.pending_timeouts[tmo_info.round])
             )
         return None
 
-    def advance_round_tc(self,tc):
+    def advance_round_tc(self, tc):
         if tc == None or tc.round < self.current_round:
             return False
         last_round_tc = tc
         self.start_timer(tc.round + 1)
         return True
 
-    def advance_round_qc(self,qc):
+    def advance_round_qc(self, qc):
         if qc.vote_info.round < self.current_round:
             return False
         last_round_tc = None
