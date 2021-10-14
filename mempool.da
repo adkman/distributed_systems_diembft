@@ -1,4 +1,4 @@
-class Mempool:
+class MemPool:
 
     def __init__(self):
         self.pending_txns = {}
@@ -12,7 +12,7 @@ class Mempool:
         return send_txns
 
 def main():
-    mempool = Mempool()
+    mempool = MemPool()
     mempool.add_transactions({1:"one"})
     mempool.add_transactions({2:"one"})
     mempool.add_transactions({1:"two"})

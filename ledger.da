@@ -44,17 +44,17 @@ class Ledger:
             return self.commited[block_id]
         return None
 
-
-l = Ledger()
-l.speculate(10,11,"1st")
-l.speculate(10,12,"2nd")
-l.speculate(11,13,"3nd")
-l.commit(11)
-l.commit(13)
-l.commit(12)
-print(l.committed_block(11))
-print(l.committed_block(12))
-print(l.committed_block(14))
-print(l.committed_block(13))
-print(l.committed_block(12))
+def main():
+    l = Ledger()
+    l.speculate(10,11,"1st")
+    l.speculate(10,12,"2nd")
+    l.speculate(11,13,"3nd")
+    l.commit(11)
+    l.commit(13)
+    l.commit(12)
+    print(l.committed_block(11))
+    print(l.committed_block(12))
+    print(l.committed_block(14))
+    print(l.committed_block(13))
+    print(l.committed_block(12))
 
