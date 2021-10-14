@@ -1,27 +1,23 @@
-# from 
+from cryptography import Cryptography
+
 class BlockTree:
-    def __init__(self):
-        pending_block_tree = [] # tree of blocks pending commitment
-        pending_votes = None # collected votes per block indexed by their LedgerInfo hash
-        high_qc = None # highest known QC
-        high_commit_qc = None # highest QC that serves as a commit certificate
+    def __init__(self, validator):
+        self.pending_block_tree = [] # tree of blocks pending commitment
+        self.pending_votes = None # collected votes per block indexed by their LedgerInfo hash
+        self.high_qc = None # highest known QC
+        self.high_commit_qc = None # highest QC that serves as a commit certificate
+        self.validator = validator
 
     def execute_and_insert(self,b):
         Ledger.speculate(b.qc.block_id, b.id, b.payload)
         self.pending_block_tree.add(b)
 
     def generate_block(self,txns, current_round):
-        return Block(
-            author = u,
-            round = current_round,
-            payload = txns,
-            qc = high_qc,
-            #id = hash(author || round || payload || qc.vote info.id || qc.signatures) 
-            )
+        return Block(self.validator, current_round, txns, self.high_qc, Cryptography.hash(author, current_round, payload, qc.vote_info.id, qc.signatures) )
 
     def process_vote(self,v):
         self.process_qc(v.high_commit_qc)
-        vote_idx = hash(v.ledger_commit_info)
+        vote_idx = Cryptography.hash(v.ledger_commit_info)
         self.pending_votes[vote_idx] = self.pending_votes[vote_idx].add(v.signature)
         if len(self.pending_votes[vote_idx]) == 2*f + 1:
             qc = QC(

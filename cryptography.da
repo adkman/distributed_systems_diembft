@@ -4,9 +4,8 @@ import pickle
 import nacl.hash
 
 class Cryptography:
-    def hash(data):
-        # return nacl.hash.sha256(Cryptography.get_bytes_from_data(data), encoder=nacl.encoding.HexEncoder)
-        return nacl.hash.sha256(Cryptography.get_bytes_from_data(data), encoder=nacl.encoding.HexEncoder)
+    def hash(*data):
+        return nacl.hash.sha256(pickle.dumps(data), encoder=nacl.encoding.HexEncoder)
 
     def generate_key():
         signing_key = nacl.signing.SigningKey.generate()
