@@ -9,7 +9,7 @@ class BlockTree:
         self.validator = validator
 
     def execute_and_insert(self,b):
-        Ledger.speculate(b.qc.block_id, b.id, b.payload)
+        self.validator.ledger.speculate(b.qc.block_id, b.id, b.payload)
         self.pending_block_tree.add(b)
 
     def generate_block(self,txns, current_round):
@@ -30,7 +30,7 @@ class BlockTree:
 
     def process_qc(self,qc):
         if qc.ledger_commit_info.commit_state_id != None:
-            Ledger.commit(qc.vote_info.parent_id)
+            self.validator.ledger.commit(qc.vote_info.parent_id)
             self.pending_block_tree.prune(qc.vote_info.parent_id) # parent id becomes the new root of pending
             #high_commit_qc = maxround{qc, high_x_qc}
             self.high_commit_qc = max(qc, self.high_commit_qc)

@@ -1,8 +1,7 @@
-# from collections import DefaultDict
-
 class Ledger:
 
-    def __init__(self):
+    def __init__(self, validator):
+        self.validator = validator
         self.state_id = 0
         # self.spec_tree = DefaultDict(DefaultDict())
         self.spec_tree = dict()

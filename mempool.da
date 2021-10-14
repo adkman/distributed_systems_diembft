@@ -1,7 +1,8 @@
 class MemPool:
 
-    def __init__(self):
+    def __init__(self, validator):
         self.pending_txns = {}
+        self.validator = validator
 
     def add_transactions(self, txns):
         self.pending_txns.update(txns)
@@ -18,4 +19,3 @@ def main():
     mempool.add_transactions({1:"two"})
     print(mempool.get_transactions())
     print(mempool.get_transactions())
-    # print(Safety.tp())

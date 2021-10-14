@@ -5,49 +5,56 @@ from mempool import MemPool
 from safety import Safety
 from utilities import ProposalMsg
 from cryptography import Cryptography
+from ledger import Ledger
 
 class Validator (process):
 
-    def setup(this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients): pass
+    def setup(config, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
+        self.ledger = Ledger(this_validator)
+        self.blocktree = BlockTree(this_validator)
+        self.safety = Safety(this_validator)
+        self.pacemaker = Pacemaker(this_validator)
+        self.mempool = MemPool(this_validator)
+        self.leader_election = LeaderElection(this_validator)
 
     def run():
         await(received(('Done',), from_=parent()))
 
     def process_certificate_qc(qc):
-        BlockTree.process_qc(qc)
-        LeaderElection.update_leaders(qc)
-        Pacemaker.advance_round(qc.vote_info.round)
+        self.blocktree.process_qc(qc)
+        self.leader_election.update_leaders(qc)
+        self.pacemaker.advance_round(qc.vote_info.round)
 
     def process_new_round_event(last_tc):
-        if self.this_validator == LeaderElection.get_leader(Pacemaker.current_round):
-            block = BlockTree.generate_block(
-                MemPool.get_transactions(), Pacemaker.current_round)
+        if self.this_validator == self.leader_election.get_leader(self.pacemaker.current_round):
+            block = self.blocktree.generate_block(
+                self.mempool.get_transactions(), self.pacemaker.current_round)
             proposal_msg = ProposalMsg(
                 block=block,
                 last_round_tc=last_tc,
-                high_commit_qc=BlockTree.high_commit_qc
+                high_commit_qc=self.blocktree.high_commit_qc
             )
             send(('ProposalMsg', proposal_msg), to=self.replicas)
 
     def receive(msg=('LocalTimeout',)):
-        Pacemaker.local_timeout_round()
+        self.pacemaker.local_timeout_round()
 
     def receive(msg=('ProposalMsg', proposal_msg), from_=p):
         process_certificate_qc(proposal_msg.block.qc)
         process_certificate_qc(proposal_msg.high_commit_qc)
-        Pacemaker.advance_round_tc(proposal_msg.last_round_tc)
-        round = Pacemaker.current_round
-        leader = LeaderElection.get_leader(round)
+        self.pacemaker.advance_round_tc(proposal_msg.last_round_tc)
+        round = self.pacemaker.current_round
+        leader = self.leader_election.get_leader(round)
         if proposal_msg.block.round != round or proposal_msg.sender != leader or proposal_msg.block.author != leader:
             return
-        BlockTree.execute_and_insert(proposal_msg)
-        vote_msg = Safety.make_vote(
+        self.blocktree.execute_and_insert(proposal_msg)
+        vote_msg = self.safety.make_vote(
             proposal_msg.block, proposal_msg.last_round_tc)
         if vote_msg is not None:
-            send(('VoteMsg', vote_msg), to=LeaderElection.get_leader(round + 1))
+            send(('VoteMsg', vote_msg), to=self.leader_election.get_leader(round + 1))
 
     def receive(msg=('VoteMsg', vote_msg), from_=p):
-        qc = BlockTree.process_vote(vote_msg)
+        qc = self.blocktree.process_vote(vote_msg)
         if qc is not None:
             process_certificate_qc(qc)
             process_new_round_event(None)
@@ -55,10 +62,10 @@ class Validator (process):
     def receive(msg=('TimeoutMsg', timeout_msg), from_=p):
         process_certificate_qc(timeout_msg.tmo_info.high_qc)
         process_certificate_qc(timeout_msg.high_commit_qc)
-        Pacemaker.advance_round_tc(timeout_msg.last_round_tc)
-        tc = Pacemaker.process_remote_timeout(timeout_msg)
+        self.pacemaker.advance_round_tc(timeout_msg.last_round_tc)
+        tc = self.pacemaker.process_remote_timeout(timeout_msg)
         if tc is not None:
-            Pacemaker.advance_round_tc(tc)
+            self.pacemaker.advance_round_tc(tc)
             process_new_round_event(tc)
 
     def receive(msg=('request', signed_req), from_=client):

@@ -1,14 +1,13 @@
-from pacemaker import Pacemaker
-from ledger import Ledger
 class LeaderElection:
 
-    def __init__(self):
-        validators = [] # The list of current validators
+    def __init__(self, validator):
+        self.validator = validator
+        self.validators = [] # The list of current validators
         # do we have to explicitly state the window_size and exclude_size
-        window_size = 5 # A parameter for the leader reputation algorithm
-        exclude_size = 5 # Between f and 2f, number of excluded authors of last committed blocks
+        self.window_size = 5 # A parameter for the leader reputation algorithm
+        self.exclude_size = 5 # Between f and 2f, number of excluded authors of last committed blocks
 
-        reputation_leaders = dict() # Map from round numbers to leaders elected due to the reputation scheme
+        self.reputation_leaders = dict() # Map from round numbers to leaders elected due to the reputation scheme
 
     def get_leader(self,round):
         if round in self.reputation_leaders:
@@ -19,7 +18,7 @@ class LeaderElection:
     def update_leaders(self,qc):
         extended_round  = qc.vote_info.parent_round
         qc_round = qc.vote_info.round
-        current_round = Pacemaker.current_round
+        current_round = self.current_round
         if extended_round + 1 == qc_round and qc_round + 1 == current_round :
             self.reputation_leaders[current_round + 1] = self.elect_reputation_leader(qc)
 
@@ -30,7 +29,7 @@ class LeaderElection:
         #for i = 0; i < window size ∨ |last authors| < exclude size; i ← i + 1 do
         i = 0
         while(i<self.window_size or len(last_authors)<self.exclude_size):
-            current_block = Ledger.committed_block(current_qc.vote_info.parent_id)
+            current_block = self.validator.ledger.committed_block(current_qc.vote_info.parent_id)
             block_author = current_block.author
             if i < self.window_size:
                 active_validators = active_validators.union(current_qc.signatures.signers())

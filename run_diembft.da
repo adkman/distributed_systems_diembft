@@ -31,15 +31,15 @@ class RunDiemBFT(process):
             public_keys_clients[c] = public_key
 
         for v in validators:
-            setup({v}, (v, validators - {v}, private_keys_validators[v], public_keys_validators, public_keys_clients))
+            setup({v}, (config, v, validators - {v}, private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for c in clients:
             setup({c}, (validators, nclientops, private_keys_clients[c], public_keys_validators))
 
-        output("keys", private_keys_validators)
-        output("keys", public_keys_validators)
-        output("keys", private_keys_clients)
-        output("keys", public_keys_clients)
+        # output("keys", private_keys_validators)
+        # output("keys", public_keys_validators)
+        # output("keys", private_keys_clients)
+        # output("keys", public_keys_clients)
 
         start(validators)
         start(clients)
