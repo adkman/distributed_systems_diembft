@@ -1,6 +1,7 @@
 from cryptography import Cryptography
 from utilities import Block
 from utilities import QC
+
 class BlockTree:
     def __init__(self, validator, ledger):
         self.pending_block_tree = [] # tree of blocks pending commitment
@@ -9,6 +10,9 @@ class BlockTree:
         self.high_commit_qc = None # highest QC that serves as a commit certificate
         self.validator = validator
         self.ledger = ledger
+
+        # f TODO: we have to get f from the config
+        self.f = 1
 
     def execute_and_insert(self,b):
         self.ledger.speculate(b.qc.block_id, b.id, b.payload)
@@ -22,7 +26,7 @@ class BlockTree:
         self.process_qc(v.high_commit_qc)
         vote_idx = Cryptography.hash(v.ledger_commit_info)
         self.pending_votes[vote_idx] = self.pending_votes[vote_idx].add(v.signature)
-        if len(self.pending_votes[vote_idx]) == 2*f + 1:
+        if len(self.pending_votes[vote_idx]) == 2*self.f + 1:
             # qc = QC(
             # vote_info = v.vote_info,
             # state_id = v.state_id,
@@ -35,7 +39,7 @@ class BlockTree:
             return qc
         # This is the structure of QC 
         # self.vote_info = vote_info
-        # self.ledger_commit_info = ledger_commit_info
+        # self.ledger_commit_info = ledger_commit_info # It had ledger_commit_state_id and hash of vote info
         # self.signatures = signatures # A quorum of signatures
         # self.author = validator # The validator that produced the qc ----- Is this the leader of the block
         # self.author_signature = signu(self.signatures)
@@ -47,5 +51,11 @@ class BlockTree:
             self.pending_block_tree.prune(qc.vote_info.parent_id) # parent id becomes the new root of pending
             #high_commit_qc = maxround{qc, high_x_qc}
             self.high_commit_qc = max(qc, self.high_commit_qc)
-        self.high_qc = max(qc, self.high_qc)
-
+            #
+            # if qc.vote_info.round > self.high_commit_qc.vote_info.round:
+            #     self.high_commit_qc = qc
+            #
+        self.high_qc = max(qc, self.high_qc) 
+        # This can be implemented in this way
+        # if qc.vote_info.round > self.high_qc.vote_info.round:
+        #     self.high_qc = qc 

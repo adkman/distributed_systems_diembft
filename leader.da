@@ -39,7 +39,7 @@ class LeaderElection:
             if i < self.window_size:
                 #TODO: check what to put exactly instead of signers() in current_qc.signatures.signers()
                 active_validators = active_validators.union(current_qc.signatures.signers())
-            # |current qc.signatures.signers()| ≥ 2f + 1
+            # len(current qc.signatures.signers()) ≥ 2f + 1
             if len(last_authors) < self.exclude_size:
                 last_authors = last_authors.union(block_author)
             current_qc = current_block.qc
@@ -48,5 +48,7 @@ class LeaderElection:
         active_validators = active_validators.difference(last_authors) # contains at least 1 validator
 
         #TODO: Check this two lines
+        # return active validators.pick one(seed ← qc.voteinfo.round)
+        # return active_validators[random.seed(qc.voteinfo.round)]
         random.seed(qc.voteinfo.round)
         return random.choice(active_validators)

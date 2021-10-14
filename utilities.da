@@ -14,11 +14,12 @@ class LedgerCommitInfo:
 
 class VoteMsg:
     def __init__(self, vote_info = None, ledger_commit_info = None, high_commit_qc = None, validator = None):
-        self.vote_info = vote_info # A VoteInfo record
+        self.vote_info = vote_info # A VoteInfo record  
         self.ledger_commit_info = ledger_commit_info # Speculated ledger info
         self.high_commit_qc = high_commit_qc # QC to synchronize on committed blocks
         self.sender = validator # Added automatically when constructed
         self.signature = signu(self.ledger_commit_info) # Signed automatically when constructed
+        # self.signature = Cryptography.sign_message(self.ledger_commit_info,self.validator_private_key)
 
 # QC is a VoteMsg with multiple signatures
 class QC:
@@ -28,6 +29,7 @@ class QC:
         self.signatures = signatures #A quorum of signatures
         self.author = validator # The validator that produced the qc
         self.author_signature = signu(self.signatures)
+        # self.author_signature = Cryptography.sign_message(self.signatures,self.validator_private_key)
 
 class Block:
     def __init__(self, author = None, round = None, payload = None, qc = None, id = None):
@@ -43,6 +45,7 @@ class TimeoutInfo:
         self.high_qc = high_qc
         self.sender = validator # Added automatically when constructed
         self.signature = signu(round, self.high_qc.round) # Signed automatically when constructed
+        # self.signature = Cryptography.sign_message() TODO: find a way to sign when two arguments are passed
 
 class TC:
     def __init__(self, round =None, tmo_high_qc_rounds =None, signatures =None):
@@ -61,4 +64,5 @@ class ProposalMsg:
         self.block = block
         self.last_round_tc = last_round_tc # TC for block.round − 1 if block.qc.vote info.round 6= block.round − 1, else ⊥
         self.high_commit_qc = high_commit_qc # QC to synchronize on committed blocks
-        self.signature =  signu(self.block.id)
+        self.signature =  signu(self.block.id) # T
+        # self.signature = Cryptography.sign_message(self.block_id,self.validator_private_key)

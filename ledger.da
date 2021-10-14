@@ -1,5 +1,5 @@
 class Ledger:
-    
+
     def __init__(self, validator):
         self.validator = validator
         self.state_id = 0
@@ -23,8 +23,8 @@ class Ledger:
         else:
             self.spec_tree[self.state_id_map[prev_block_id]][self.state_id_map[block_id]] = txns 
         self.pend_state[self.state_id_map[block_id]] = self.state_id_map[prev_block_id]
-        
-        
+
+
     def pending_state(self,block_id):
         if self.state_id_map[block_id] in self.pend_state:
             return self.pend_state[self.state_id_map[block_id]]
