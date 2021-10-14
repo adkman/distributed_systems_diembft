@@ -1,12 +1,11 @@
 import time
-
+from cryptography import Cryptography
 class Client(process):
 
-    def setup(validators: set, nops: int):
+    def setup(validators: set, nops: int, private_key, public_keys_validators):
         self.results = dict()
         self.final_results = set()
         self.sleep_time = 1
-
 
     def run():
         for i in range(nops):
@@ -15,8 +14,8 @@ class Client(process):
                 'req_id': i,
                 'request': "txn"
             }
-            send(('request', req), to=validators)
-
+            signed_req = Cryptography.sign_message(req, private_key)
+            send(('request', signed_req), to=validators)
             await(i in final_results)
             output('Got final response')
             time.sleep(sleep_time)

@@ -1,6 +1,6 @@
 from validator import Validator
 from client import Client
-
+from cryptography import Cryptography
 
 class RunDiemBFT(process):
 
@@ -11,13 +11,35 @@ class RunDiemBFT(process):
         self.nclientops = int(config['nclientops'])
 
     def run():
-        validators = new(Validator, num=nvalidators)
-        for v in validators:
-            setup({v}, (v, validators - {v}))
 
+        private_keys_validators = {}
+        public_keys_validators = {}
+        private_keys_clients = {}
+        public_keys_clients = {}
+
+        validators = new(Validator, num=nvalidators)
         clients = new(Client, num=nclients)
+
+        for v in validators:
+            private_key, public_key = Cryptography.generate_key()
+            private_keys_validators[v] = private_key
+            public_keys_validators[v] = public_key
+
         for c in clients:
-            setup({c}, (validators, nclientops))
+            private_key, public_key = Cryptography.generate_key()
+            private_keys_clients[c] = private_key
+            public_keys_clients[c] = public_key
+
+        for v in validators:
+            setup({v}, (v, validators - {v}, private_keys_validators[v], public_keys_validators, public_keys_clients))
+
+        for c in clients:
+            setup({c}, (validators, nclientops, private_keys_clients[c], public_keys_validators))
+
+        output("keys", private_keys_validators)
+        output("keys", public_keys_validators)
+        output("keys", private_keys_clients)
+        output("keys", public_keys_clients)
 
         start(validators)
         start(clients)
@@ -37,7 +59,8 @@ def is_config_valid(config):
 
 def main():
     # read config from Run.setup file
-    configs = [{'nvalidators': 4, 'nfaulty': 1, 'nclients': 2, 'nclientops': 3}]
+    # configs = [{'nvalidators': 4, 'nfaulty': 1, 'nclients': 2, 'nclientops': 3}]
+    configs = [{'nvalidators': 4, 'nfaulty': 1, 'nclients': 1, 'nclientops': 1}]
     for config in configs:
         if not is_config_valid(config):
             output("The provided config", config,

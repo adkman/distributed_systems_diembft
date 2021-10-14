@@ -4,11 +4,11 @@ from blocktree import BlockTree
 from mempool import MemPool
 from safety import Safety
 from utilities import ProposalMsg
-
+from cryptography import Cryptography
 
 class Validator (process):
 
-    def setup(this_validator, replicas: set): pass
+    def setup(this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients): pass
 
     def run():
         await(received(('Done',), from_=parent()))
@@ -61,6 +61,14 @@ class Validator (process):
             Pacemaker.advance_round_tc(tc)
             process_new_round_event(tc)
 
-    def receive(msg=('request', req), from_=client):
-        output("received request from client", req)
-        send(('response', req), to=client)
+    def receive(msg=('request', signed_req), from_=client):
+
+        try:
+            req_bytes = public_keys_clients[client].verify(signed_req)
+            output("Verified", client, "'s signature")
+            req = Cryptography.get_data_from_bytes(req_bytes)
+            output("received request from client", req)
+            send(('response', req), to=client)
+        except:
+            #TODO: Add mechanism to handle this, send something to client
+            output(client, "'s signature could not be verified")
