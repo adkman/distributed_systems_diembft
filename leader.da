@@ -1,12 +1,15 @@
 class LeaderElection:
 
-    def __init__(self, validator):
+    def __init__(self, validator, replicas, ledger, pacemaker):
         self.validator = validator
-        self.validators = [] # The list of current validators
-        # do we have to explicitly state the window_size and exclude_size
+        self.replicas = replicas
+        self.ledger = ledger
+        self.pacemaker = pacemaker
+        self.validators = [{validator}.union(replicas)] # The list of current validators
+
+        #TODO: Get window_size and exclude_size from config?
         self.window_size = 5 # A parameter for the leader reputation algorithm
         self.exclude_size = 5 # Between f and 2f, number of excluded authors of last committed blocks
-
         self.reputation_leaders = dict() # Map from round numbers to leaders elected due to the reputation scheme
 
     def get_leader(self,round):
@@ -18,7 +21,7 @@ class LeaderElection:
     def update_leaders(self,qc):
         extended_round  = qc.vote_info.parent_round
         qc_round = qc.vote_info.round
-        current_round = self.current_round
+        current_round = self.pacemaker.current_round
         if extended_round + 1 == qc_round and qc_round + 1 == current_round :
             self.reputation_leaders[current_round + 1] = self.elect_reputation_leader(qc)
 
@@ -29,7 +32,7 @@ class LeaderElection:
         #for i = 0; i < window size ∨ |last authors| < exclude size; i ← i + 1 do
         i = 0
         while(i<self.window_size or len(last_authors)<self.exclude_size):
-            current_block = self.validator.ledger.committed_block(current_qc.vote_info.parent_id)
+            current_block = self.ledger.committed_block(current_qc.vote_info.parent_id)
             block_author = current_block.author
             if i < self.window_size:
                 active_validators = active_validators.union(current_qc.signatures.signers())
@@ -40,8 +43,5 @@ class LeaderElection:
             # active validators ← active validators \ last authors // contains at least 1 validator
         active_validators = active_validators.difference(last_authors) # contains at least 1 validator
 
-        #Do we have to define the pick_one function
-        return active_validators.pick_one(seed = qc.voteinfo.round)
-
-
-
+        random.seed(qc.voteinfo.round)
+        return random.choice(active_validators)

@@ -15,7 +15,7 @@ class Validator (process):
         self.safety = Safety(this_validator)
         self.pacemaker = Pacemaker(this_validator)
         self.mempool = MemPool(this_validator)
-        self.leader_election = LeaderElection(this_validator)
+        self.leader_election = LeaderElection(this_validator, replicas, self.ledger, self.pacemaker)
 
     def run():
         await(received(('Done',), from_=parent()))
