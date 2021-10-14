@@ -2,14 +2,15 @@ from utilities import TC
 
 class Pacemaker:
 
-    def __init__(self, validator):
-        self.validator = validator
+    def __init__(self, validator, blocktree, safety):
         self.current_round = 0  # Initially zero
         self.last_round_tc = None  # Initially None
         self.pending_timeouts = dict()  # Timeouts per rounda
-
-        # Where do we calculate F
+        #TODO: get from config
         self.f = 1
+        self.validator = validator
+        self.blocktree = blocktree
+        self.safety = safety
 
     def get_round_timer(self, r):
         # Know what to keep in delta ------------- TODO ------------
@@ -24,8 +25,8 @@ class Pacemaker:
 
     def local_timeout_round(self):
         # save consensus state() ------- Asked to neglect this line
-        timeout_info = self.validator.safety.make_timeout(
-            self.current_round, self.validator.blocktree.high_qc, self.last_round_tc)
+        timeout_info = self.safety.make_timeout(
+            self.current_round, self.blocktree.high_qc, self.last_round_tc)
         # broadcast TimeoutMsg( timeout_info, last_round_tc, BlockTree.high_commit_qc) ------------- TODO ------------
 
     def process_remote_timeout(self, tmo):

@@ -1,15 +1,16 @@
 from cryptography import Cryptography
 
 class BlockTree:
-    def __init__(self, validator):
+    def __init__(self, validator, ledger):
         self.pending_block_tree = [] # tree of blocks pending commitment
         self.pending_votes = None # collected votes per block indexed by their LedgerInfo hash
         self.high_qc = None # highest known QC
         self.high_commit_qc = None # highest QC that serves as a commit certificate
         self.validator = validator
+        self.ledger = ledger
 
     def execute_and_insert(self,b):
-        self.validator.ledger.speculate(b.qc.block_id, b.id, b.payload)
+        self.ledger.speculate(b.qc.block_id, b.id, b.payload)
         self.pending_block_tree.add(b)
 
     def generate_block(self,txns, current_round):
@@ -30,7 +31,7 @@ class BlockTree:
 
     def process_qc(self,qc):
         if qc.ledger_commit_info.commit_state_id != None:
-            self.validator.ledger.commit(qc.vote_info.parent_id)
+            self.ledger.commit(qc.vote_info.parent_id)
             self.pending_block_tree.prune(qc.vote_info.parent_id) # parent id becomes the new root of pending
             #high_commit_qc = maxround{qc, high_x_qc}
             self.high_commit_qc = max(qc, self.high_commit_qc)

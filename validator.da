@@ -11,9 +11,9 @@ class Validator (process):
 
     def setup(config, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
         self.ledger = Ledger(this_validator)
-        self.blocktree = BlockTree(this_validator)
-        self.safety = Safety(this_validator)
-        self.pacemaker = Pacemaker(this_validator)
+        self.blocktree = BlockTree(this_validator, self.ledger)
+        self.safety = Safety(this_validator, self.ledger, self.blocktree)
+        self.pacemaker = Pacemaker(this_validator, self.blocktree, self.safety)
         self.mempool = MemPool(this_validator)
         self.leader_election = LeaderElection(this_validator, replicas, self.ledger, self.pacemaker)
 
