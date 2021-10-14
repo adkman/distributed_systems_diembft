@@ -1,6 +1,5 @@
 # from collections import DefaultDict
 
-
 class Ledger:
 
     def __init__(self):
@@ -8,34 +7,54 @@ class Ledger:
         # self.spec_tree = DefaultDict(DefaultDict())
         self.spec_tree = dict()
         self.state_id_map = dict()
+        self.get_block_id = dict()
         self.pend_state = dict()
+        self.commited = dict()
 
     def speculate(self,prev_block_id, block_id, txns):
         if prev_block_id not in self.state_id_map:
             self.state_id_map[prev_block_id] = 0
+            self.get_block_id[0] = prev_block_id
         self.state_id += 1
         self.state_id_map[block_id] = self.state_id
+        self.get_block_id[self.state_id] = block_id
         # self.spec_tree[self.state_id_map[prev_block_id]][self.state_id_map[block_id]] = txns
         if self.state_id_map[prev_block_id] not in self.spec_tree:
             self.spec_tree[self.state_id_map[prev_block_id]] = {self.state_id_map[block_id]:txns}
         else:
             self.spec_tree[self.state_id_map[prev_block_id]][self.state_id_map[block_id]] = txns 
-        self.pend_state[self.state_id] = self.state_id_map[prev_block_id]
+        self.pend_state[self.state_id_map[block_id]] = self.state_id_map[prev_block_id]
+        
         
     def pending_state(self,block_id):
-        if block_id in self.pend_state:
-            self.pend_state[block_id]
+        if self.state_id_map[block_id] in self.pend_state:
+            return self.pend_state[self.state_id_map[block_id]]
         return None
 
     def commit(self,block_id):
-        pend = self.pend_state[block_id] # gets the state ID of parent
+        pend = self.pend_state[self.state_id_map[block_id]] # gets the state ID of parent
         print(self.spec_tree[pend][self.state_id_map[block_id]])
+        self.commited[block_id] = self.get_block_id[pend]
+
         #prune
         # for i in self.spec_tree
 
-    # def committed_block(block_id):
+    def committed_block(self,block_id):
+        if block_id in self.commited:
+            return self.commited[block_id]
+        return None
+
 
 l = Ledger()
-l.speculate(0,1,"12321")
-l.commit(1)
-        
+l.speculate(10,11,"1st")
+l.speculate(10,12,"2nd")
+l.speculate(11,13,"3nd")
+l.commit(11)
+l.commit(13)
+l.commit(12)
+print(l.committed_block(11))
+print(l.committed_block(12))
+print(l.committed_block(14))
+print(l.committed_block(13))
+print(l.committed_block(12))
+
