@@ -1,3 +1,4 @@
+import random
 class LeaderElection:
 
     def __init__(self, validator, replicas, ledger, pacemaker):
@@ -46,5 +47,6 @@ class LeaderElection:
             # active validators ← active validators \ last authors // contains at least 1 validator
         active_validators = active_validators.difference(last_authors) # contains at least 1 validator
 
+        #TODO: Check this two lines
         random.seed(qc.voteinfo.round)
         return random.choice(active_validators)

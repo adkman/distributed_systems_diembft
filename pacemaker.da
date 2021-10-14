@@ -15,7 +15,7 @@ class Pacemaker:
 
     def get_round_timer(self, r):
         #TODO: Can modify formula if wanted
-        return 4*delta
+        return 4*self.delta
 
     def stop_timer(self, round):
         #TODO: Figure this out along with start_timer()
@@ -23,7 +23,7 @@ class Pacemaker:
 
     #TODO: Read "Questions regarding MemPool Implementation" on Blackboard Discussion
     def start_timer(self, new_round):
-        self.stop_timer(current_round)
+        self.stop_timer(self.current_round)
         self.current_round = new_round
         #TODO: Need to implement timer functionality
         # start_local_timer for round current round for duration get_round_timer(current_round)

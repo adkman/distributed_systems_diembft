@@ -1,5 +1,5 @@
 class Ledger:
-
+    
     def __init__(self, validator):
         self.validator = validator
         self.state_id = 0
