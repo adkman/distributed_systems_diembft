@@ -8,6 +8,7 @@ class BlockTree:
         self.pending_block_tree = []  # tree of blocks pending commitment
         # collected votes per block indexed by their LedgerInfo hash
         self.pending_votes = dict()
+        self.pending_signers = dict()
         self.high_qc = None  # highest known QC
         self.high_commit_qc = None  # highest QC that serves as a commit certificate
         self.validator = validator
@@ -40,21 +41,26 @@ class BlockTree:
         )
 
     def process_vote(self, vote_msg):
+        print("VoteMsg", vote_msg.sender)
         self.process_qc(vote_msg.high_commit_qc)
         vote_idx = Cryptography.hash(vote_msg.ledger_commit_info)
         if vote_idx in self.pending_votes:
             self.pending_votes[vote_idx].add(vote_msg.signature)
+            self.pending_signers[vote_idx].add(vote_msg.sender)
         else:
             self.pending_votes[vote_idx] = {vote_msg.signature}
+            self.pending_signers[vote_idx] = {vote_msg.sender}
 
         print("faulty ", self.f, len(self.pending_votes[vote_idx]))
         if len(self.pending_votes[vote_idx]) == 2*self.f + 1:
+            # print("signatures", self.pending_votes[vote_idx])
             print("Hogaya qc")
             return QC(
                 vote_info=vote_msg.vote_info,
                 ledger_commit_info=vote_msg.ledger_commit_info,
                 signatures=self.pending_votes[vote_idx],
-                author=self.validator
+                author=self.validator,
+                signers = self.pending_signers[vote_idx]
             )
         # This is the structure of QC
         # self.vote_info = vote_info

@@ -47,7 +47,7 @@ class LeaderElection:
             if i < self.window_size:
                 # TODO: check what to put exactly instead of signers() in current_qc.signatures.signers()
                 active_validators = active_validators.union(
-                    current_qc.signatures.signers())
+                    current_qc.signers)
             if len(last_authors) < self.exclude_size:
                 last_authors = last_authors.union(block_author)
             current_qc = current_block.qc

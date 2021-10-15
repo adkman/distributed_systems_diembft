@@ -28,12 +28,13 @@ class VoteMsg:
 
 
 class QC:
-    def __init__(self, vote_info=None, ledger_commit_info=None, signatures=None, author=None):
+    def __init__(self, vote_info=None, ledger_commit_info=None, signatures=None, author=None, signers=None):
         self.vote_info = vote_info
         self.ledger_commit_info = ledger_commit_info
         self.signatures = signatures  # A quorum of signatures
         self.author = author  # The validator that produced the qc
         self.author_signature = self.signatures
+        self.signers = self.signers
         # self.author_signature = Cryptography.sign_message(self.signatures)
 
 
