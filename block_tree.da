@@ -13,9 +13,6 @@ class BlockTree:
         self.ledger = ledger
         self.f = nfaulty
 
-        # f TODO: we have to get f from the config
-        self.f = 1
-
     def execute_and_insert(self, b):
         self.ledger.speculate(b.qc.block_id, b.id, b.payload)
         self.pending_block_tree.add(b)

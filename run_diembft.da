@@ -57,14 +57,23 @@ def is_config_valid(config):
         output(
             "Number of validators should be more than thrice of number of faulty validators.")
         return False
+    if int(config['nfaulty']) <= int(config['exclude_size']) <= 2 * int(config['nfaulty']):
+        output(
+            "Exlude size should be between nfaulty and 2*nfaulty")
+        return False
     return True
 
 
 def main():
-    # read config from Run.setup file
-    # configs = [{'nvalidators': 4, 'nfaulty': 1, 'nclients': 2, 'nclientops': 3}]
-    configs = [{'nvalidators': 4, 'nfaulty': 1,
-                'nclients': 1, 'nclientops': 1}]
+    configs = [{
+        'nvalidators': 4,
+        'nfaulty': 1,
+        'nclients': 1,
+        'nclientops': 1,
+        'delta': 5,
+        'window_size': 5,
+        'exclude_size': 2
+    }]
     for config in configs:
         if not is_config_valid(config):
             output("The provided config", config,

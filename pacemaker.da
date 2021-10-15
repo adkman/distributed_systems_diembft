@@ -1,50 +1,52 @@
 from object_types import TC
 
+
 class Pacemaker:
 
-    def __init__(self, validator, blocktree, safety):
+    def __init__(self, validator, blocktree, safety, nfaulty, delta):
         self.current_round = 0  # Initially zero
         self.last_round_tc = None  # Initially None
         self.pending_timeouts = dict()  # Timeouts per rounda
-        #TODO: get f and delta from config
-        self.f = 1
-        self.delta = 244
+        self.f = nfaulty
+        self.delta = delta
         self.validator = validator
         self.blocktree = blocktree
         self.safety = safety
 
     def get_round_timer(self, r):
-        #TODO: Can modify formula if wanted
+        # TODO: Can modify formula if wanted
         return 4*self.delta
 
     def stop_timer(self, round):
-        #TODO: Figure this out along with start_timer()
+        # TODO: Figure this out along with start_timer()
         print("Koi to rok lo")
 
-    #TODO: Read "Questions regarding MemPool Implementation" on Blackboard Discussion
+    # TODO: Read "Questions regarding MemPool Implementation" on Blackboard Discussion
     def start_timer(self, new_round):
         self.stop_timer(self.current_round)
         self.current_round = new_round
-        #TODO: Need to implement timer functionality
+        # TODO: Need to implement timer functionality
         # start_local_timer for round current round for duration get_round_timer(current_round)
     # Do we have to create a handler that continues checks if that particular rounds duration is exceded or not
     # Do we have to implement our own method for stop_timer(round)
 
     def local_timeout_round(self):
-        #TODO: Look into this save_consensus_state()
+        # TODO: Look into this save_consensus_state()
         # save consensus state() ------- Asked to neglect this line
-        timeout_info = self.safety.make_timeout(self.current_round, self.blocktree.high_qc, self.last_round_tc)
-        #TODO: How to broadcast? Need to make PaceMaker as a process???
+        timeout_info = self.safety.make_timeout(
+            self.current_round, self.blocktree.high_qc, self.last_round_tc)
+        # TODO: How to broadcast? Need to make PaceMaker as a process???
         # broadcast TimeoutMsg(timeout_info, self.last_round_tc, self.blockTree.high_commit_qc)
 
     def process_remote_timeout(self, tmo):
         tmo_info = tmo.tmo_info
         if tmo_info.round < self.current_round:
             return None
-        #TODO: "senders" is not defined anywhere, read and fix this
+        # TODO: "senders" is not defined anywhere, read and fix this
         if tmo_info.sender not in self.pending_timeouts[tmo_info.round].senders:
-            #TODO: In pending_timeouts dictionary, for given key round number what is the corresponding value?
-            self.pending_timeouts[tmo_info.round] = self.pending_timeouts[tmo_info.round].add(tmo_info)
+            # TODO: In pending_timeouts dictionary, for given key round number what is the corresponding value?
+            self.pending_timeouts[tmo_info.round] = self.pending_timeouts[tmo_info.round].add(
+                tmo_info)
         if len(self.pending_timeouts[tmo_info.round].senders) == self.f + 1:
             self.stop_timer(self.current_round)
             self.local_timeout_round()  # Bracha timeout

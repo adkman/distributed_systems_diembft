@@ -1,6 +1,6 @@
-from blocktree import BlockTree
+from block_tree import BlockTree
 from cryptography import Cryptography
-from leader import LeaderElection
+from leader_election import LeaderElection
 from ledger import Ledger
 from mempool import MemPool
 from object_types import ProposalMsg
@@ -15,10 +15,11 @@ class Validator (process):
         self.blocktree = BlockTree(
             this_validator, self.ledger, config['nfaulty'])
         self.safety = Safety(this_validator, self.ledger, self.blocktree)
-        self.pacemaker = Pacemaker(this_validator, self.blocktree, self.safety)
+        self.pacemaker = Pacemaker(
+            this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])
         self.mempool = MemPool(this_validator)
         self.leader_election = LeaderElection(
-            this_validator, replicas, self.ledger, self.pacemaker)
+            this_validator, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
 
     def run():
         await(received(('Done',), from_=parent()))
