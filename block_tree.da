@@ -15,7 +15,8 @@ class BlockTree:
         self.f = nfaulty
 
     def execute_and_insert(self, block):
-        self.ledger.speculate(block.qc.vote_info.id, block.id, block.payload)
+        self.ledger.speculate(block.qc.vote_info.id, block.id, [
+                              txn['command'] for txn in block.payload])
         self.pending_block_tree.add(block)
 
     def generate_block(self, txns, current_round):

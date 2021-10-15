@@ -2,7 +2,7 @@ from block_tree import BlockTree
 from cryptography import Cryptography
 from leader_election import LeaderElection
 from ledger import Ledger
-from mempool import MemPool
+from mem_pool import MemPool
 from object_types import ProposalMsg
 from pacemaker import Pacemaker
 from safety import Safety
@@ -19,7 +19,7 @@ class Validator (process):
         self.safety = Safety(this_validator, self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
             this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])
-        self.mempool = MemPool(this_validator)
+        self.mempool = MemPool()
         self.leader_election = LeaderElection(
             this_validator, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
 
@@ -107,6 +107,9 @@ class Validator (process):
         if req is not None:
             output("Verified", client, "'s signature")
             output("received request from client", req)
+
+            req['client'] = client
+            self.mempool.add_transaction(req)
 
             req['resp_status'] = "success"
             send(('response', req), to=client)

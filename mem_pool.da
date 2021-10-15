@@ -1,0 +1,21 @@
+class MemPool:
+
+    def __init__(self):
+        self.pending_txns = dict()
+
+    def add_transaction(self, txn):
+        if (txn['req_id'] not in self.pending_txns):
+            self.pending_txns[txn['req_id']] = txn
+
+    def get_transactions(self):
+        send_txns = list(self.pending_txns.values())
+        self.pending_txns.clear()
+        return send_txns
+
+def main():
+    mempool = MemPool()
+    mempool.add_transaction({'req_id': 1, 'command': "sss"})
+    mempool.add_transaction({'req_id': 1, 'command': "ttt"})
+    mempool.add_transaction({'req_id': 2, 'command': "ppp"})
+    print(mempool.get_transactions())
+    print(mempool.get_transactions())
