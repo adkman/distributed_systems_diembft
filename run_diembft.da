@@ -30,7 +30,7 @@ class RunDiemBFT(process):
             public_keys_clients[c] = public_key
 
         for i, v in enumerate(validators):
-            setup({v}, (config, i, v, validators,
+            setup({v}, (config, i, list(validators),
                         private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for i, c in enumerate(clients):

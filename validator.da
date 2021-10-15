@@ -10,18 +10,19 @@ from safety import Safety
 
 class Validator (process):
 
-    def setup(config, this_validator_id, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
+    def setup(config, validator_id, replicas: list, private_key, public_keys_validators, public_keys_clients):
         self.id_block = dict()
         self.ledger = Ledger(
-            this_validator_id, this_validator, self.id_block)
+            validator_id, self.id_block)
         self.blocktree = BlockTree(
-            this_validator, self.ledger, config['nfaulty'], self.id_block)
-        self.safety = Safety(this_validator, self.ledger, self.blocktree)
+            validator_id, replicas, self.ledger, config['nfaulty'], self.id_block)
+        self.safety = Safety(validator_id, replicas,
+                             self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
-            this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])
-        self.mempool = MemPool()
+            validator_id, replicas, self.blocktree, self.safety, config['nfaulty'], config['delta'])
+        self.mempool = MemPool(validator_id)
         self.leader_election = LeaderElection(
-            this_validator, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
+            validator_id, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
         Cryptography.private_key = self.private_key
 
     def run():
@@ -33,7 +34,7 @@ class Validator (process):
         self.pacemaker.advance_round_qc(qc)
 
     def process_new_round_event(last_tc):
-        if self.this_validator == self.leader_election.get_leader(self.pacemaker.current_round):
+        if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
             block = self.blocktree.generate_block(
                 self.mempool.get_transactions(), self.pacemaker.current_round)
             self.id_block[block.id] = block
@@ -41,7 +42,7 @@ class Validator (process):
                 block=block,
                 last_round_tc=last_tc,
                 high_commit_qc=self.blocktree.high_commit_qc,
-                validator=self.this_validator
+                validator=self.replicas[validator_id]
             )
             signed_proposal_msg = Cryptography.sign_message(proposal_msg)
             send(('ProposalMsg', signed_proposal_msg), to=self.replicas)

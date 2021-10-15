@@ -3,8 +3,7 @@ from cryptography import Cryptography
 
 class Ledger:
 
-    def __init__(self, validator_id, validator, id_block):
-        self.validator = validator
+    def __init__(self, validator_id, id_block):
         self.state_id = 0
         # self.state_id_to_block_id = dict()
         self.block_id_to_state_id = dict()

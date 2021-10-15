@@ -3,13 +3,14 @@ from object_types import TC
 
 class Pacemaker:
 
-    def __init__(self, validator, blocktree, safety, nfaulty, delta):
+    def __init__(self, validator_id, replicas, blocktree, safety, nfaulty, delta):
         self.current_round = 1  # Initially zero
         self.last_round_tc = None  # Initially None
         self.pending_timeouts = dict()  # Timeouts per rounda
         self.f = nfaulty
         self.delta = delta
-        self.validator = validator
+        self.validator = replicas[validator_id]
+        self.validator_id = validator_id
         self.blocktree = blocktree
         self.safety = safety
 

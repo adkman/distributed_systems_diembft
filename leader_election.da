@@ -3,13 +3,12 @@ import random
 
 class LeaderElection:
 
-    def __init__(self, validator, replicas, ledger, pacemaker, window_size, exclude_size):
-        self.validator = validator
+    def __init__(self, validator_id, replicas, ledger, pacemaker, window_size, exclude_size):
+        self.validator = replicas[validator_id]
+        self.validator_id = validator_id
         self.replicas = replicas
         self.ledger = ledger
         self.pacemaker = pacemaker
-        # The list of current validators
-        self.validators = list(replicas)
         self.window_size = window_size  # A parameter for the leader reputation algorithm
         # Between f and 2f, number of excluded authors of last committed blocks
         self.exclude_size = exclude_size
@@ -19,7 +18,7 @@ class LeaderElection:
     def get_leader(self, round):
         if round in self.reputation_leaders:
             return self.reputation_leaders[round]
-        return self.validators[((round)//2) % len(self.validators)]
+        return self.replicas[((round)//2) % len(self.replicas)]
 
     def update_leaders(self, qc):
         if qc is None:
