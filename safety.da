@@ -58,10 +58,12 @@ class Safety:
                 self.__commit_state_id_candidate(block.round, block.qc),
                 Cryptography.hash(vote_info)
             )
+            #TODO: Match VoteMsg to actual class members 
             return VoteMsg(
                 vote_info,
                 ledger_commit_info,
-                self.blocktree.high_commit_qc
+                self.blocktree.high_commit_qc,
+                self.validator
             )
         return None
 

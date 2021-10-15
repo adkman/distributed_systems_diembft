@@ -12,8 +12,8 @@ class Cryptography:
         verification_key = signing_key.verify_key
         return (signing_key, verification_key)
 
-    def sign_message(message, private_key):
-        return private_key.sign(Cryptography.get_bytes_from_data(message))
+    def sign_message(message):
+        return Cryptography.private_key.sign(Cryptography.get_bytes_from_data(message))
  
     def get_bytes_from_data(message):
         return pickle.dumps(message)

@@ -1,3 +1,4 @@
+from cryptography import Cryptography
 class Ledger:
 
     def __init__(self, validator_id, validator, id_block):
@@ -9,16 +10,21 @@ class Ledger:
         self.commited = dict()
         self.genesis = "Genesis"
         self.id_to_block = id_block
+        self.filename = "Validator"+str(validator_id)+"_Ledger"
+        print("validator ID",validator_id)
+        print("File Name",self.filename)
 
     def get_state_id(self,prev_block_id = None, block_id = None, txns = None):
-        # if prev_block_id == None:
-            #
-            #
-        self.state_id += 1
-        return self.state_id
+
+        if prev_block_id == None:
+            return Cryptography.hash(txns)
+
+        parent_state_id = self.block_id_to_state_id[prev_block_id]
+        return Cryptography.hash(parent_state_id,txns)
 
     def speculate(self,prev_block_id, block_id, txns):
         print(prev_block_id,block_id)
+
         if prev_block_id == None:
             self.speculate_tree[self.genesis] = [block_id]
             self.speculate_tree[block_id] = []
@@ -26,10 +32,13 @@ class Ledger:
         elif prev_block_id not in self.speculate_tree:
             print(prev_block_id)
             print("ERROR")
+
         else:
             self.speculate_tree[prev_block_id].append(block_id)
+            self.speculate_tree[block_id] = []
             # state_id = self.get_state_id()
             # self.block_id_to_state_id[prev_block_id] = state_id
+
         state_id = self.get_state_id(prev_block_id,block_id, txns)
         self.block_id_to_state_id[block_id] = state_id
 
@@ -39,7 +48,7 @@ class Ledger:
         return None
 
     def commit(self,block_id):
-        print(self.speculate_tree)
+        print("Before Pruning",self.speculate_tree)
         current_block_to_commit = self.id_to_block[block_id]
         # print("current_block_to_commit id: ",current_block_to_commit.id)
         stack = []
@@ -47,16 +56,33 @@ class Ledger:
             # self.commited[current_block_to_commit.id] = current_block_to_commit.payload
             stack.append((current_block_to_commit.id,current_block_to_commit.payload))
 
+            # Pruning Logic
+            # prev_commited_block_id = current_block_to_commit.id
+            #
+
             # Now check if the current block has a QC
             if current_block_to_commit.qc == None:
                 break
-            # current_block_to_commit = self.id_to_block[current_block_to_commit.qc.vote_info.id]
-            current_block_to_commit = self.id_to_block[current_block_to_commit.qc]
+            current_block_to_commit = self.id_to_block[current_block_to_commit.qc.vote_info.id]
+            # current_block_to_commit = self.id_to_block[current_block_to_commit.qc]
+            
+            # Pruning Logic
+            # parent = current_block_to_commit.id
+            # # print("Parent",parent)
+            # if len(self.speculate_tree[parent]) > 1:
+            #     self.speculate_tree[parent] = [prev_commited_block_id]
+
         
         while(stack):
             i,j = stack.pop()
             self.commited[i] = j
+            # print(j)
+            file = open(self.filename,'a+')
+            file.write(j+'\n')
 
+        print("after Pruning", self.speculate_tree)
+
+        # file.close()
         #prune
         # for i in self.spec_tree
 

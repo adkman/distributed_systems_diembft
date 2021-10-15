@@ -36,7 +36,7 @@ class Pacemaker:
         # TODO: How to broadcast? Need to make PaceMaker as a process???
         # TODO: private_key, replicas is not there with Pacemaker, MERGE with validator
         # timeout_msg = TimeoutMsg(timeout_info, self.last_round_tc, self.blockTree.high_commit_qc)
-        # signed_timeout_msg = Cryptography.sign_message(timeout_msg, self.private_key)
+        # signed_timeout_msg = Cryptography.sign_message(timeout_msg)
         # send(('TimeoutMsg', signed_timeout_msg), to=self.replicas)
 
 
