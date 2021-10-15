@@ -12,6 +12,7 @@ class Client(process):
         self.sleep_time = config['sleeptime']
         self.nops = config['nclientops']
         self.f = config['nfaulty']
+        Cryptography.private_key = self.private_key
 
     def run():
         for i in range(nops):
@@ -21,7 +22,7 @@ class Client(process):
                 'req_id': i,
                 'txn': str(client_id) + "-" + str(i)
             }
-            signed_req = Cryptography.sign_message(req, private_key)
+            signed_req = Cryptography.sign_message(req)
             send(('request', signed_req), to=validators)
             await(i in final_results)
             output('Got final response for request', req)

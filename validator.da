@@ -22,6 +22,7 @@ class Validator (process):
         self.mempool = MemPool(this_validator)
         self.leader_election = LeaderElection(
             this_validator, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
+        Cryptography.private_key = self.private_key
 
     def run():
         await(received(('Done',), from_=parent()))
@@ -40,8 +41,7 @@ class Validator (process):
                 last_round_tc=last_tc,
                 high_commit_qc=self.blocktree.high_commit_qc
             )
-            signed_proposal_msg = Cryptography.sign_message(
-                proposal_msg, self.private_key)
+            signed_proposal_msg = Cryptography.sign_message(proposal_msg)
             send(('ProposalMsg', signed_proposal_msg), to=self.replicas)
 
     def receive(msg=('LocalTimeout',)):
@@ -63,8 +63,7 @@ class Validator (process):
             vote_msg = self.safety.make_vote(
                 proposal_msg.block, proposal_msg.last_round_tc)
             if vote_msg is not None:
-                signed_vote_msg = Cryptography.sign_message(
-                    vote_msg, self.private_key)
+                signed_vote_msg = Cryptography.sign_message(vote_msg)
                 send(('VoteMsg', signed_vote_msg),
                      to=self.leader_election.get_leader(round + 1))
         else:
