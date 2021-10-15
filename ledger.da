@@ -5,6 +5,7 @@ class Ledger:
 
     def __init__(self, validator_id, validator, id_block):
         self.validator = validator
+        self.validator_id = validator_id
         self.state_id = 0
         # self.state_id_to_block_id = dict()
         self.block_id_to_state_id = dict()
@@ -13,8 +14,6 @@ class Ledger:
         self.genesis = "Genesis"
         self.id_to_block = id_block
         self.filename = "Validator"+str(validator_id)+"_Ledger"
-        # print("validator ID",validator_id)
-        # print("File Name",self.filename)
 
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
 
@@ -25,15 +24,13 @@ class Ledger:
         return Cryptography.hash(parent_state_id, txns)
 
     def speculate(self, prev_block_id, block_id, txns):
-        # print('ledger speculate', prev_block_id,block_id)
-
+        
         if prev_block_id == None:
             self.speculate_tree[self.genesis] = [block_id]
             self.speculate_tree[block_id] = []
 
         elif prev_block_id not in self.speculate_tree:
-            print(prev_block_id)
-            print("ERROR")
+            print("SPEC ERROR")
 
         else:
             self.speculate_tree[prev_block_id].append(block_id)
@@ -51,6 +48,8 @@ class Ledger:
 
     def commit(self, block_id):
         print("Before Pruning", self.speculate_tree)
+        print("Block MAP", self.id_to_block)
+        print("COmmiting BLOCK", block_id)
         if block_id not in self.id_to_block:
             print("ERROROROROROR", block_id)
             return

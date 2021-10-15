@@ -5,12 +5,13 @@ from object_types import LedgerCommitInfo, TimeoutInfo, VoteInfo, VoteMsg
 class Safety:
 
     # TODO: move private and public keys here
-    def __init__(self, validator, ledger, blocktree):
+    def __init__(self, this_validator_id, validator, ledger, blocktree):
         self.__private_key = None
         self.__public_keys = []
         self.__highest_vote_round = 0
         self.__highest_qc_round = -1
         self.validator = validator
+        self.this_validator_id = this_validator_id
         self.ledger = ledger
         self.blocktree = blocktree
 

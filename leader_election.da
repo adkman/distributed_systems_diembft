@@ -3,8 +3,9 @@ import random
 
 class LeaderElection:
 
-    def __init__(self, validator, replicas, ledger, pacemaker, window_size, exclude_size):
+    def __init__(self, this_validator_id, validator, replicas, ledger, pacemaker, window_size, exclude_size):
         self.validator = validator
+        self.this_validator_id = this_validator_id
         self.replicas = replicas
         self.ledger = ledger
         self.pacemaker = pacemaker

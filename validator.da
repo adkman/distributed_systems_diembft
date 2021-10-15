@@ -15,13 +15,13 @@ class Validator (process):
         self.ledger = Ledger(
             this_validator_id, this_validator, self.id_block)
         self.blocktree = BlockTree(
-            this_validator, self.ledger, config['nfaulty'], self.id_block)
-        self.safety = Safety(this_validator, self.ledger, self.blocktree)
+            this_validator_id, this_validator, self.ledger, config['nfaulty'])
+        self.safety = Safety(this_validator_id, this_validator, self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
-            this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])
-        self.mempool = MemPool()
+            this_validator_id, this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])
+        self.mempool = MemPool(this_validator_id)
         self.leader_election = LeaderElection(
-            this_validator, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
+            this_validator_id, this_validator, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
         Cryptography.private_key = self.private_key
 
     def run():

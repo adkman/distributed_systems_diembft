@@ -34,7 +34,7 @@ class QC:
         self.signatures = signatures  # A quorum of signatures
         self.author = author  # The validator that produced the qc
         self.author_signature = self.signatures
-        self.signers = self.signers
+        self.signers = signers
         # self.author_signature = Cryptography.sign_message(self.signatures)
 
 
