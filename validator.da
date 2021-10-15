@@ -11,11 +11,11 @@ from safety import Safety
 class Validator (process):
 
     def setup(config, this_validator_id, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
-        self.block_block_id = dict()
+        self.id_block = dict()
         self.ledger = Ledger(
-            this_validator_id, this_validator, self.block_block_id)
+            this_validator_id, this_validator, self.id_block)
         self.blocktree = BlockTree(
-            this_validator, self.ledger, config['nfaulty'], self.block_block_id)
+            this_validator, self.ledger, config['nfaulty'], self.id_block)
         self.safety = Safety(this_validator, self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
             this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])
@@ -36,6 +36,7 @@ class Validator (process):
         if self.this_validator == self.leader_election.get_leader(self.pacemaker.current_round):
             block = self.blocktree.generate_block(
                 self.mempool.get_transactions(), self.pacemaker.current_round)
+            self.id_block[block.id] = block
             proposal_msg = ProposalMsg(
                 block=block,
                 last_round_tc=last_tc,
@@ -51,6 +52,7 @@ class Validator (process):
     def receive(msg=('ProposalMsg', signed_proposal_msg), from_=p):
         proposal_msg = Cryptography.get_verified_message(
             signed_proposal_msg, public_keys_validators[p])
+        output("Received proposal from ", p, proposal_msg)
         if proposal_msg is not None:
             if proposal_msg.block.qc is not None:
                 process_certificate_qc(proposal_msg.block.qc)

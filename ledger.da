@@ -1,4 +1,6 @@
 from cryptography import Cryptography
+
+
 class Ledger:
 
     def __init__(self, validator_id, validator, id_block):
@@ -14,15 +16,15 @@ class Ledger:
         # print("validator ID",validator_id)
         # print("File Name",self.filename)
 
-    def get_state_id(self,prev_block_id = None, block_id = None, txns = None):
+    def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
 
         if prev_block_id == None:
             return Cryptography.hash(txns)
 
         parent_state_id = self.block_id_to_state_id[prev_block_id]
-        return Cryptography.hash(parent_state_id,txns)
+        return Cryptography.hash(parent_state_id, txns)
 
-    def speculate(self,prev_block_id, block_id, txns):
+    def speculate(self, prev_block_id, block_id, txns):
         # print('ledger speculate', prev_block_id,block_id)
 
         if prev_block_id == None:
@@ -39,63 +41,71 @@ class Ledger:
             # state_id = self.get_state_id()
             # self.block_id_to_state_id[prev_block_id] = state_id
 
-        state_id = self.get_state_id(prev_block_id,block_id, txns)
+        state_id = self.get_state_id(prev_block_id, block_id, txns)
         self.block_id_to_state_id[block_id] = state_id
 
-    def pending_state(self,block_id):
+    def pending_state(self, block_id):
         if block_id in self.block_id_to_state_id:
             return self.block_id_to_state_id[block_id]
         return None
 
-    def commit(self,block_id):
-        print("Before Pruning",self.speculate_tree)
+    def commit(self, block_id):
+        print("Before Pruning", self.speculate_tree)
+        if block_id not in self.id_to_block:
+            print("ERROROROROROR", block_id)
+            return
         current_block_to_commit = self.id_to_block[block_id]
         # print("current_block_to_commit id: ",current_block_to_commit.id)
         stack = []
         while(current_block_to_commit.id not in self.commited):
             # self.commited[current_block_to_commit.id] = current_block_to_commit.payload
-            stack.append((current_block_to_commit.id,current_block_to_commit.payload))
+            if current_block_to_commit.id not in self.id_to_block:
+                break
+            stack.append((current_block_to_commit.id,
+                          current_block_to_commit.payload))
 
             # Pruning Logic
             # prev_commited_block_id = current_block_to_commit.id
             #
 
             # Now check if the current block has a QC
-            if current_block_to_commit.qc == None:
+            if current_block_to_commit.qc == None or current_block_to_commit.qc.vote_info.id not in self.id_to_block:
                 break
             current_block_to_commit = self.id_to_block[current_block_to_commit.qc.vote_info.id]
             # current_block_to_commit = self.id_to_block[current_block_to_commit.qc]
-            
+
             # Pruning Logic
             # parent = current_block_to_commit.id
             # # print("Parent",parent)
             # if len(self.speculate_tree[parent]) > 1:
             #     self.speculate_tree[parent] = [prev_commited_block_id]
 
-        
         while(stack):
-            i,j = stack.pop()
+            i, j = stack.pop()
             self.commited[i] = j
             # print(j)
-            file = open(self.filename,'a+')
-            file.write(j+'\n')
+            file = open(self.filename, 'a+')
+            for txn in j:
+                print(txn['command'], 'lolololololol')
+                file.write(txn['command']+'\n')
 
         print("after Pruning", self.speculate_tree)
 
         # file.close()
-        #prune
+        # prune
         # for i in self.spec_tree
 
-    def committed_block(self,block_id):
+    def committed_block(self, block_id):
         if block_id in self.commited:
-            return self.commited[block_id]
+            return self.id_to_block[block_id]
         return None
+
 
 def main():
     l = Ledger()
-    l.speculate(10,11,"1st")
-    l.speculate(10,12,"2nd")
-    l.speculate(11,13,"3nd")
+    l.speculate(10, 11, "1st")
+    l.speculate(10, 12, "2nd")
+    l.speculate(11, 13, "3nd")
     l.commit(11)
     l.commit(13)
     l.commit(12)
