@@ -14,6 +14,8 @@ class Ledger:
         self.genesis = "Genesis"
         self.id_to_block = id_block
         self.filename = "Validator"+str(validator_id)+"_Ledger"
+        file = open(self.filename, 'w')
+        file.close()
 
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
 
@@ -47,14 +49,9 @@ class Ledger:
         return None
 
     def commit(self, block_id):
-        print("Before Pruning", self.speculate_tree)
-        print("Block MAP", self.id_to_block)
-        print("COmmiting BLOCK", block_id)
         if block_id not in self.id_to_block:
-            print("ERROROROROROR", block_id)
             return
         current_block_to_commit = self.id_to_block[block_id]
-        # print("current_block_to_commit id: ",current_block_to_commit.id)
         stack = []
         while(current_block_to_commit.id not in self.commited):
             # self.commited[current_block_to_commit.id] = current_block_to_commit.payload
@@ -75,22 +72,17 @@ class Ledger:
 
             # Pruning Logic
             # parent = current_block_to_commit.id
-            # # print("Parent",parent)
             # if len(self.speculate_tree[parent]) > 1:
             #     self.speculate_tree[parent] = [prev_commited_block_id]
 
         while(stack):
             i, j = stack.pop()
             self.commited[i] = j
-            # print(j)
             file = open(self.filename, 'a+')
             for txn in j:
-                print(txn['command'], 'lolololololol')
                 file.write(txn['command']+'\n')
 
-        print("after Pruning", self.speculate_tree)
-
-        # file.close()
+        file.close()
         # prune
         # for i in self.spec_tree
 
@@ -101,15 +93,10 @@ class Ledger:
 
 
 def main():
-    l = Ledger()
-    l.speculate(10, 11, "1st")
-    l.speculate(10, 12, "2nd")
-    l.speculate(11, 13, "3nd")
-    l.commit(11)
-    l.commit(13)
-    l.commit(12)
-    print(l.committed_block(11))
-    print(l.committed_block(12))
-    print(l.committed_block(14))
-    print(l.committed_block(13))
-    print(l.committed_block(12))
+    l = Ledger(1,2,3)
+    # l.speculate(10, 11, "1st")
+    # l.speculate(10, 12, "2nd")
+    # l.speculate(11, 13, "3nd")
+    # l.commit(11)
+    # l.commit(13)
+    # l.commit(12)
