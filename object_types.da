@@ -1,3 +1,4 @@
+from cryptography import Cryptography
 class VoteInfo:
     def __init__(self, id=None, round=None, parent_id=None, parent_round=None, exec_state_id=None):
         self.id = id
@@ -22,7 +23,8 @@ class VoteMsg:
         self.ledger_commit_info = ledger_commit_info  # Speculated ledger info
         self.high_commit_qc = high_commit_qc  # QC to synchronize on committed blocks
         self.sender = validator  # Added automatically when constructed
-        self.signature = signu(self.ledger_commit_info)
+        self.signature = self.ledger_commit_info
+        # self.signature = Cryptography.sign_message(self.ledger_commit_info)
 
 
 class QC:
@@ -31,7 +33,8 @@ class QC:
         self.ledger_commit_info = ledger_commit_info
         self.signatures = signatures  # A quorum of signatures
         self.author = validator  # The validator that produced the qc
-        self.author_signature = signu(self.signatures)
+        self.author_signature = self.signatures
+        # self.author_signature = Cryptography.sign_message(self.signatures)
 
 
 class Block:
@@ -50,7 +53,8 @@ class TimeoutInfo:
         self.high_qc = high_qc
         self.sender = validator  # Added automatically when constructed
         # Signed automatically when constructed
-        self.signature = signu(round, self.high_qc.round)
+        self.signature = round + self.high_qc.round
+        # self.signature = Cryptography.sign_message(round, self.high_qc.round)
 
 
 class TC:
@@ -76,4 +80,5 @@ class ProposalMsg:
         # TC for block.round − 1 if block.qc.vote info.round 6= block.round − 1, else ⊥
         self.last_round_tc = last_round_tc
         self.high_commit_qc = high_commit_qc  # QC to synchronize on committed blocks
-        self.signature = signu(self.block.id)
+        self.signature = self.block.id
+        # self.signature = Cryptography.sign_message(self.block.id)
