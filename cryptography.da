@@ -20,3 +20,10 @@ class Cryptography:
 
     def get_data_from_bytes(message):
         return pickle.loads(message)
+
+    def get_verified_message(signed_message, public_key):
+        try:
+            bytes_data = public_key.verify(signed_message)
+            return Cryptography.get_data_from_bytes(bytes_data)
+        except:
+            return None

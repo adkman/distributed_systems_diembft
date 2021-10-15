@@ -31,8 +31,6 @@ class Pacemaker:
     # Do we have to implement our own method for stop_timer(round)
 
     def local_timeout_round(self):
-        # TODO: Look into this save_consensus_state()
-        # save consensus state() ------- Asked to neglect this line
         timeout_info = self.safety.make_timeout(
             self.current_round, self.blocktree.high_qc, self.last_round_tc)
         # TODO: How to broadcast? Need to make PaceMaker as a process???

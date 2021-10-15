@@ -1,13 +1,16 @@
 import time
+
 from cryptography import Cryptography
 
 
 class Client(process):
 
-    def setup(validators: set, nops: int, private_key, public_keys_validators):
+    def setup(config, client_id, validators: set, private_key, public_keys_validators):
         self.results = dict()
         self.final_results = set()
         self.sleep_time = 1
+        self.nops = config['nclientops']
+        self.f = config['nfaulty']
 
     def run():
         for i in range(nops):

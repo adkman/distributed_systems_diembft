@@ -10,11 +10,12 @@ from safety import Safety
 
 class Validator (process):
 
-    def setup(config, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
+    def setup(config, this_validator_id, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
         self.block_block_id = dict()
-        self.ledger = Ledger(this_validator,self.block_block_id)
+        self.ledger = Ledger(
+            this_validator_id, this_validator, self.block_block_id)
         self.blocktree = BlockTree(
-            this_validator, self.ledger, config['nfaulty'],self.block_block_id)
+            this_validator, self.ledger, config['nfaulty'], self.block_block_id)
         self.safety = Safety(this_validator, self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
             this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])
@@ -76,12 +77,11 @@ class Validator (process):
 
     def receive(msg=('request', signed_req), from_=client):
 
-        try:
-            req_bytes = public_keys_clients[client].verify(signed_req)
+        req = Cryptography.get_verified_message(signed_req, public_keys_clients[client])
+        if req is not None:
             output("Verified", client, "'s signature")
-            req = Cryptography.get_data_from_bytes(req_bytes)
             output("received request from client", req)
             send(('response', req), to=client)
-        except:
+        else:
             # TODO: Add mechanism to handle this, send something to client
             output(client, "'s signature could not be verified")

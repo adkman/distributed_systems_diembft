@@ -1,7 +1,6 @@
 class Ledger:
 
-    def __init__(self, validator, id_block):
-        print(id_block)
+    def __init__(self, validator_id, validator, id_block):
         self.validator = validator
         self.state_id = 0
         # self.state_id_to_block_id = dict()

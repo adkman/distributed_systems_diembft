@@ -7,9 +7,7 @@ class RunDiemBFT(process):
 
     def setup(config):
         self.nvalidators = int(config['nvalidators'])
-        self.nfaulty = int(config['nfaulty'])
         self.nclients = int(config['nclients'])
-        self.nclientops = int(config['nclientops'])
 
     def run():
 
@@ -31,12 +29,12 @@ class RunDiemBFT(process):
             private_keys_clients[c] = private_key
             public_keys_clients[c] = public_key
 
-        for v in validators:
-            setup({v}, (config, v, validators - {v},
+        for i, v in enumerate(validators):
+            setup({v}, (config, i, v, validators - {v},
                         private_keys_validators[v], public_keys_validators, public_keys_clients))
 
-        for c in clients:
-            setup({c}, (validators, nclientops,
+        for i, c in enumerate(clients):
+            setup({c}, (config, i, validators,
                         private_keys_clients[c], public_keys_validators))
 
         # output("keys", private_keys_validators)
