@@ -9,7 +9,7 @@ class LeaderElection:
         self.ledger = ledger
         self.pacemaker = pacemaker
         # The list of current validators
-        self.validators = [{validator}.union(replicas)]
+        self.validators = list(replicas)
         self.window_size = window_size  # A parameter for the leader reputation algorithm
         # Between f and 2f, number of excluded authors of last committed blocks
         self.exclude_size = exclude_size
@@ -22,6 +22,8 @@ class LeaderElection:
         return self.validators[((round)//2) % len(self.validators)]
 
     def update_leaders(self, qc):
+        if qc is None:
+            return
         extended_round = qc.vote_info.parent_round
         qc_round = qc.vote_info.round
         current_round = self.pacemaker.current_round

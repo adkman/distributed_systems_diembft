@@ -9,7 +9,7 @@ class Safety:
         self.__private_key = None
         self.__public_keys = []
         self.__highest_vote_round = 0
-        self.__highest_qc_round = None
+        self.__highest_qc_round = -1
         self.validator = validator
         self.ledger = ledger
         self.blocktree = blocktree
@@ -36,26 +36,31 @@ class Safety:
             return False
         return self.__consecutive(round, qc_round) or self.__consecutive(round, tc.round)
 
-    def __commit_state_id_candidate(self, block_round, qc):
-        if self.__consecutive(block_round, qc.vote_info.round):
-            return self.ledger.pending_state(qc.vote_info.id)
+    def __commit_state_id_candidate(self, block_round, qc_round, qc_block_id):
+        if self.__consecutive(block_round, qc_round):
+            return self.ledger.pending_state(qc_block_id)
         else:
             return None
 
     def make_vote(self, block, last_tc):
-        qc_round = block.qc.vote_info.round
-        if valid_signatures(block, last_tc) and self.__safe_to_vote(block.round, qc_round, last_tc):
+        if block.qc is None:
+            qc_round = 0
+            qc_block_id = "0"
+        else:
+            qc_round = block.qc.vote_info.round
+            qc_block_id = block.qc.vote_info.id
+        if Cryptography.valid_signatures(block, last_tc) and self.__safe_to_vote(block.round, qc_round, last_tc):
             self.__update_highest_qc_round(qc_round)
             self.__increase_highest_vote_round(block.round)
             vote_info = VoteInfo(
                 block.id,
                 block.round,
-                block.qc.vote_info.id,
+                qc_block_id,
                 qc_round,
                 self.ledger.pending_state(block.id)
             )
             ledger_commit_info = LedgerCommitInfo(
-                self.__commit_state_id_candidate(block.round, block.qc),
+                self.__commit_state_id_candidate(block.round, qc_round, qc_block_id),
                 Cryptography.hash(vote_info)
             )
             #TODO: Match VoteMsg to actual class members 

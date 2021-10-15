@@ -11,8 +11,8 @@ class Ledger:
         self.genesis = "Genesis"
         self.id_to_block = id_block
         self.filename = "Validator"+str(validator_id)+"_Ledger"
-        print("validator ID",validator_id)
-        print("File Name",self.filename)
+        # print("validator ID",validator_id)
+        # print("File Name",self.filename)
 
     def get_state_id(self,prev_block_id = None, block_id = None, txns = None):
 
@@ -23,7 +23,7 @@ class Ledger:
         return Cryptography.hash(parent_state_id,txns)
 
     def speculate(self,prev_block_id, block_id, txns):
-        print(prev_block_id,block_id)
+        # print('ledger speculate', prev_block_id,block_id)
 
         if prev_block_id == None:
             self.speculate_tree[self.genesis] = [block_id]

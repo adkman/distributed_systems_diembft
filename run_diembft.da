@@ -30,7 +30,7 @@ class RunDiemBFT(process):
             public_keys_clients[c] = public_key
 
         for i, v in enumerate(validators):
-            setup({v}, (config, i, v, validators - {v},
+            setup({v}, (config, i, v, validators,
                         private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for i, c in enumerate(clients):
@@ -46,7 +46,7 @@ class RunDiemBFT(process):
         start(clients)
 
         await(each(c in clients, has=received(('Done',), from_=c)))
-        output("All validators done.")
+        # output("All validators done.")
         send(('Done',), to=validators)
 
 
@@ -67,7 +67,7 @@ def main():
         'nvalidators': 4,
         'nfaulty': 1,
         'nclients': 1,
-        'nclientops': 2,
+        'nclientops': 1,
         'sleeptime': 1,
         'delta': 5,
         'window_size': 5,

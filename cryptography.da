@@ -27,3 +27,6 @@ class Cryptography:
             return Cryptography.get_data_from_bytes(bytes_data)
         except:
             return None
+
+    def valid_signatures(*p):
+        return True

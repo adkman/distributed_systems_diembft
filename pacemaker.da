@@ -4,7 +4,7 @@ from object_types import TC
 class Pacemaker:
 
     def __init__(self, validator, blocktree, safety, nfaulty, delta):
-        self.current_round = 0  # Initially zero
+        self.current_round = 1  # Initially zero
         self.last_round_tc = None  # Initially None
         self.pending_timeouts = dict()  # Timeouts per rounda
         self.f = nfaulty

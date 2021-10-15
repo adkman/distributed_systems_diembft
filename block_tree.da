@@ -15,32 +15,46 @@ class BlockTree:
         self.f = nfaulty
 
     def execute_and_insert(self, block):
-        self.ledger.speculate(block.qc.vote_info.id, block.id, [
-                              txn['command'] for txn in block.payload])
-        self.pending_block_tree.add(block)
+        if block.qc is None:
+            self.ledger.speculate(None, block.id, [
+                txn['command'] for txn in block.payload])
+        else:
+            self.ledger.speculate(block.qc.vote_info.id, block.id, [
+                txn['command'] for txn in block.payload])
+        # self.pending_block_tree.add(block) TODO
 
     def generate_block(self, txns, current_round):
         qc = self.high_qc
+        if qc is None:
+            id = Cryptography.hash(self.validator, current_round,
+                                   txns)
+        else:
+            id = Cryptography.hash(self.validator, current_round,
+                                   txns, qc.vote_info.id, qc.signatures)
         return Block(
             self.validator,
             current_round,
             txns,
             self.high_qc,
-            Cryptography.hash(self.validator, current_round,
-                              txns, qc.vote_info.id, qc.signatures)
+            id
         )
 
     def process_vote(self, vote_msg):
         self.process_qc(vote_msg.high_commit_qc)
         vote_idx = Cryptography.hash(vote_msg.ledger_commit_info)
-        self.pending_votes[vote_idx] = self.pending_votes[vote_idx].add(
-            vote_msg.signature)
+        if vote_idx in self.pending_votes:
+            self.pending_votes[vote_idx].add(vote_msg.signature)
+        else:
+            self.pending_votes[vote_idx] = {vote_msg.signature}
+
+        print("faulty ", self.f, len(self.pending_votes[vote_idx]))
         if len(self.pending_votes[vote_idx]) == 2*self.f + 1:
+            print("Hogaya qc")
             return QC(
                 vote_info=vote_msg.vote_info,
                 ledger_commit_info=vote_msg.ledger_commit_info,
-                votes=self.pending_votes[vote_idx],
-                validator=self.validator
+                signatures=self.pending_votes[vote_idx],
+                author=self.validator
             )
         # This is the structure of QC
         # self.vote_info = vote_info
@@ -51,9 +65,9 @@ class BlockTree:
         return None
 
     def process_qc(self, qc):
-        if qc.ledger_commit_info.commit_state_id != None:
+        if qc != None and qc.ledger_commit_info.commit_state_id != None:
             self.ledger.commit(qc.vote_info.parent_id)
-            self.pending_block_tree.prune(qc.vote_info.parent_id)
+            # self.pending_block_tree.prune(qc.vote_info.parent_id) TODO
             self.high_commit_qc = get_qc_with_max_round(
                 qc, self.high_commit_qc)
         self.high_qc = get_qc_with_max_round(qc, self.high_qc)
