@@ -19,8 +19,8 @@ class Pacemaker:
         return 4*self.delta
 
     def stop_timer(self, round):
+        pass
         # TODO: Figure this out along with start_timer()
-        print("Koi to rok lo")
 
     # TODO: Read "Questions regarding MemPool Implementation" on Blackboard Discussion
     def start_timer(self, new_round):
