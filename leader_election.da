@@ -19,7 +19,6 @@ class LeaderElection:
     def get_leader(self, round):
         if round in self.reputation_leaders:
             return self.reputation_leaders[round]
-            # return leader // Reputation-based leader
         return self.validators[((round)//2) % len(self.validators)]
 
     def update_leaders(self, qc):
@@ -31,12 +30,9 @@ class LeaderElection:
                                     1] = self.elect_reputation_leader(qc)
 
     def elect_reputation_leader(self, qc):
-        # ∅ // validators that signed the last window size committed blocks
         active_validators = set()
-        # TODO: Confirm whether last_authors set needs to be ordered, if yes implement using dictionary as it's already ordered
-        last_authors = set()  # ∅ // ordered set of authors of last exclude size committed blocks
+        last_authors = set()
         current_qc = qc
-        # for i = 0; i < window size ∨ |last authors| < exclude size; i ← i + 1 do
         i = 0
         while(i < self.window_size or len(last_authors) < self.exclude_size):
             current_block = self.ledger.committed_block(
@@ -46,17 +42,12 @@ class LeaderElection:
                 # TODO: check what to put exactly instead of signers() in current_qc.signatures.signers()
                 active_validators = active_validators.union(
                     current_qc.signatures.signers())
-            # len(current qc.signatures.signers()) ≥ 2f + 1
             if len(last_authors) < self.exclude_size:
                 last_authors = last_authors.union(block_author)
             current_qc = current_block.qc
             i = i + 1
-            # active validators ← active validators \ last authors // contains at least 1 validator
         active_validators = active_validators.difference(
-            last_authors)  # contains at least 1 validator
+            last_authors)
 
-        # TODO: Check this two lines
-        # return active validators.pick one(seed ← qc.voteinfo.round)
-        # return active_validators[random.seed(qc.voteinfo.round)]
-        random.seed(qc.voteinfo.round)
+        random.seed(qc.vote_info.round)
         return random.choice(active_validators)

@@ -57,7 +57,7 @@ def is_config_valid(config):
         output(
             "Number of validators should be more than thrice of number of faulty validators.")
         return False
-    if int(config['nfaulty']) <= int(config['exclude_size']) <= 2 * int(config['nfaulty']):
+    if (int(config['nfaulty']) > int(config['exclude_size'])) or (int(config['exclude_size']) > 2 * int(config['nfaulty'])):
         output(
             "Exlude size should be between nfaulty and 2*nfaulty")
         return False

@@ -19,7 +19,13 @@ class BlockTree:
 
     def generate_block(self, txns, current_round):
         qc = self.high_qc
-        return Block(self.validator, current_round, txns, self.high_qc, Cryptography.hash(self.validator, current_round, txns, qc.vote_info.id, qc.signatures))
+        return Block(
+            self.validator,
+            current_round,
+            txns,
+            self.high_qc,
+            Cryptography.hash(self.validator, current_round, txns, qc.vote_info.id, qc.signatures)
+        )
 
     def process_vote(self, v):
         self.process_qc(v.high_commit_qc)
