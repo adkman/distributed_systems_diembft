@@ -1,5 +1,7 @@
 import time
 from cryptography import Cryptography
+
+
 class Client(process):
 
     def setup(validators: set, nops: int, private_key, public_keys_validators):
@@ -22,7 +24,6 @@ class Client(process):
 
         send(('Done',), to=parent())
 
-
     def receive(msg=('response', resp)):
         output("got response", resp)
         results[resp['req_id']].append(resp)
@@ -30,6 +31,3 @@ class Client(process):
         # check if f + 1 identical in results for request_id
         if resp_cert:
             final_results.add(resp['req_id'])
-
-
-

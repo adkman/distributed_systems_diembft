@@ -1,6 +1,7 @@
-from validator import Validator
 from client import Client
 from cryptography import Cryptography
+from validator import Validator
+
 
 class RunDiemBFT(process):
 
@@ -31,10 +32,12 @@ class RunDiemBFT(process):
             public_keys_clients[c] = public_key
 
         for v in validators:
-            setup({v}, (config, v, validators - {v}, private_keys_validators[v], public_keys_validators, public_keys_clients))
+            setup({v}, (config, v, validators - {v},
+                        private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for c in clients:
-            setup({c}, (validators, nclientops, private_keys_clients[c], public_keys_validators))
+            setup({c}, (validators, nclientops,
+                        private_keys_clients[c], public_keys_validators))
 
         # output("keys", private_keys_validators)
         # output("keys", public_keys_validators)
@@ -60,7 +63,8 @@ def is_config_valid(config):
 def main():
     # read config from Run.setup file
     # configs = [{'nvalidators': 4, 'nfaulty': 1, 'nclients': 2, 'nclientops': 3}]
-    configs = [{'nvalidators': 4, 'nfaulty': 1, 'nclients': 1, 'nclientops': 1}]
+    configs = [{'nvalidators': 4, 'nfaulty': 1,
+                'nclients': 1, 'nclientops': 1}]
     for config in configs:
         if not is_config_valid(config):
             output("The provided config", config,

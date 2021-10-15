@@ -1,0 +1,15 @@
+from object_types import QC
+
+
+def get_qc_with_max_round(qc1: QC, qc2: QC):
+    if (qc1 is None and qc2 is None) or (qc1.vote_info is None and qc2.vote_info is None):
+        return None
+    elif qc1 is None and qc2 is not None and qc2.vote_info is not None:
+        return qc2
+    elif qc1 is not None and qc1.vote_info is not None and qc2 is None:
+        return qc1
+    else:
+        if qc1.vote_info.round > qc2.vote_info.round:
+            return qc1
+        else:
+            return qc2

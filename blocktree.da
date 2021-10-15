@@ -1,31 +1,34 @@
 from cryptography import Cryptography
-from utilities import Block
-from utilities import QC
+from object_types import QC, Block
+from utils import get_qc_with_max_round
+
 
 class BlockTree:
-    def __init__(self, validator, ledger):
-        self.pending_block_tree = [] # tree of blocks pending commitment
-        self.pending_votes = None # collected votes per block indexed by their LedgerInfo hash
-        self.high_qc = None # highest known QC
-        self.high_commit_qc = None # highest QC that serves as a commit certificate
+    def __init__(self, validator, ledger, nfaulty):
+        self.pending_block_tree = []  # tree of blocks pending commitment
+        self.pending_votes = None  # collected votes per block indexed by their LedgerInfo hash
+        self.high_qc = None  # highest known QC
+        self.high_commit_qc = None  # highest QC that serves as a commit certificate
         self.validator = validator
         self.ledger = ledger
+        self.f = nfaulty
 
         # f TODO: we have to get f from the config
         self.f = 1
 
-    def execute_and_insert(self,b):
+    def execute_and_insert(self, b):
         self.ledger.speculate(b.qc.block_id, b.id, b.payload)
         self.pending_block_tree.add(b)
 
-    def generate_block(self,txns, current_round):
+    def generate_block(self, txns, current_round):
         qc = self.high_qc
-        return Block(self.validator, current_round, txns, self.high_qc, Cryptography.hash(self.validator, current_round, txns, qc.vote_info.id, qc.signatures) )
+        return Block(self.validator, current_round, txns, self.high_qc, Cryptography.hash(self.validator, current_round, txns, qc.vote_info.id, qc.signatures))
 
-    def process_vote(self,v):
+    def process_vote(self, v):
         self.process_qc(v.high_commit_qc)
         vote_idx = Cryptography.hash(v.ledger_commit_info)
-        self.pending_votes[vote_idx] = self.pending_votes[vote_idx].add(v.signature)
+        self.pending_votes[vote_idx] = self.pending_votes[vote_idx].add(
+            v.signature)
         if len(self.pending_votes[vote_idx]) == 2*self.f + 1:
             # qc = QC(
             # vote_info = v.vote_info,
@@ -35,9 +38,9 @@ class BlockTree:
             vote_info = v.vote_info
             state_id = v.state_id
             votes = self.pending_votes[vote_idx]
-            qc = QC(vote_info,state_id, votes)
+            qc = QC(vote_info, state_id, votes)
             return qc
-        # This is the structure of QC 
+        # This is the structure of QC
         # self.vote_info = vote_info
         # self.ledger_commit_info = ledger_commit_info # It had ledger_commit_state_id and hash of vote info
         # self.signatures = signatures # A quorum of signatures
@@ -45,17 +48,10 @@ class BlockTree:
         # self.author_signature = signu(self.signatures)
         return None
 
-    def process_qc(self,qc):
+    def process_qc(self, qc):
         if qc.ledger_commit_info.commit_state_id != None:
             self.ledger.commit(qc.vote_info.parent_id)
-            self.pending_block_tree.prune(qc.vote_info.parent_id) # parent id becomes the new root of pending
-            #high_commit_qc = maxround{qc, high_x_qc}
-            self.high_commit_qc = max(qc, self.high_commit_qc)
-            #
-            # if qc.vote_info.round > self.high_commit_qc.vote_info.round:
-            #     self.high_commit_qc = qc
-            #
-        self.high_qc = max(qc, self.high_qc) 
-        # This can be implemented in this way
-        # if qc.vote_info.round > self.high_qc.vote_info.round:
-        #     self.high_qc = qc 
+            self.pending_block_tree.prune(qc.vote_info.parent_id)
+            self.high_commit_qc = get_qc_with_max_round(
+                qc, self.high_commit_qc)
+        self.high_qc = get_qc_with_max_round(qc, self.high_qc)

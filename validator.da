@@ -1,21 +1,24 @@
-from pacemaker import Pacemaker
-from leader import LeaderElection
 from blocktree import BlockTree
-from mempool import MemPool
-from safety import Safety
-from utilities import ProposalMsg
 from cryptography import Cryptography
+from leader import LeaderElection
 from ledger import Ledger
+from mempool import MemPool
+from object_types import ProposalMsg
+from pacemaker import Pacemaker
+from safety import Safety
+
 
 class Validator (process):
 
     def setup(config, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
         self.ledger = Ledger(this_validator)
-        self.blocktree = BlockTree(this_validator, self.ledger)
+        self.blocktree = BlockTree(
+            this_validator, self.ledger, config['nfaulty'])
         self.safety = Safety(this_validator, self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(this_validator, self.blocktree, self.safety)
         self.mempool = MemPool(this_validator)
-        self.leader_election = LeaderElection(this_validator, replicas, self.ledger, self.pacemaker)
+        self.leader_election = LeaderElection(
+            this_validator, replicas, self.ledger, self.pacemaker)
 
     def run():
         await(received(('Done',), from_=parent()))
@@ -51,7 +54,8 @@ class Validator (process):
         vote_msg = self.safety.make_vote(
             proposal_msg.block, proposal_msg.last_round_tc)
         if vote_msg is not None:
-            send(('VoteMsg', vote_msg), to=self.leader_election.get_leader(round + 1))
+            send(('VoteMsg', vote_msg),
+                 to=self.leader_election.get_leader(round + 1))
 
     def receive(msg=('VoteMsg', vote_msg), from_=p):
         qc = self.blocktree.process_vote(vote_msg)
@@ -77,5 +81,5 @@ class Validator (process):
             output("received request from client", req)
             send(('response', req), to=client)
         except:
-            #TODO: Add mechanism to handle this, send something to client
+            # TODO: Add mechanism to handle this, send something to client
             output(client, "'s signature could not be verified")
