@@ -11,9 +11,10 @@ from safety import Safety
 class Validator (process):
 
     def setup(config, this_validator, replicas: set, private_key, public_keys_validators, public_keys_clients):
-        self.ledger = Ledger(this_validator)
+        self.block_block_id = dict()
+        self.ledger = Ledger(this_validator,self.block_block_id)
         self.blocktree = BlockTree(
-            this_validator, self.ledger, config['nfaulty'])
+            this_validator, self.ledger, config['nfaulty'],self.block_block_id)
         self.safety = Safety(this_validator, self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
             this_validator, self.blocktree, self.safety, config['nfaulty'], config['delta'])

@@ -1,39 +1,52 @@
 class Ledger:
 
-    def __init__(self, validator):
+    def __init__(self, validator, block_block_id):
+        print(block_block_id)
         self.validator = validator
         self.state_id = 0
-        # self.spec_tree = DefaultDict(DefaultDict())
-        self.spec_tree = dict()
-        self.state_id_map = dict()
-        self.get_block_id = dict()
-        self.pend_state = dict()
+        self.state_id_to_block_id = dict()
+        self.block_id_to_state_id = dict()
+        self.speculate_tree = dict()
         self.commited = dict()
+        self.genesis = "Genesis"
+        self.block_to_block_id = block_block_id
+
+    def get_state_id(self,prev_block_id = None, block_id = None, txns = None):
+        # if prev_block_id == None:
+            #
+            #
+        self.state_id += 1
+        return self.state_id
 
     def speculate(self,prev_block_id, block_id, txns):
-        if prev_block_id not in self.state_id_map:
-            self.state_id_map[prev_block_id] = 0
-            self.get_block_id[0] = prev_block_id
-        self.state_id += 1
-        self.state_id_map[block_id] = self.state_id
-        self.get_block_id[self.state_id] = block_id
-        # self.spec_tree[self.state_id_map[prev_block_id]][self.state_id_map[block_id]] = txns
-        if self.state_id_map[prev_block_id] not in self.spec_tree:
-            self.spec_tree[self.state_id_map[prev_block_id]] = {self.state_id_map[block_id]:txns}
-        else:
-            self.spec_tree[self.state_id_map[prev_block_id]][self.state_id_map[block_id]] = txns 
-        self.pend_state[self.state_id_map[block_id]] = self.state_id_map[prev_block_id]
 
+        if prev_block_id == None:
+            self.speculate_tree[self.genesis] = [block_id]
+        elif prev_block_id not in self.speculate_tree:
+            self.speculate_tree[prev_block_id] = [block_id]
+        else:
+            self.speculate_tree[prev_block_id].append(block_id)
+            # state_id = self.get_state_id()
+            # self.block_id_to_state_id[prev_block_id] = state_id
+        state_id = self.get_state_id(prev_block_id,block_id, txns)
+        self.block_id_to_state_id[block_id] = state_id
 
     def pending_state(self,block_id):
-        if self.state_id_map[block_id] in self.pend_state:
-            return self.pend_state[self.state_id_map[block_id]]
+        if block_id in self.block_id_to_state_id:
+            return self.block_id_to_state_id[block_id]
         return None
 
     def commit(self,block_id):
-        pend = self.pend_state[self.state_id_map[block_id]] # gets the state ID of parent
-        print(self.spec_tree[pend][self.state_id_map[block_id]])
-        self.commited[block_id] = self.get_block_id[pend]
+        print(self.speculate_tree)
+        current_block_to_commit = self.block_to_block_id[block_id]
+        print("current_block_to_commit id: ",current_block_to_commit.id)
+        while(current_block_to_commit.id not in self.commited):
+            self.commited[current_block_to_commit.id] = current_block_to_commit.payload
+            # Now check if the current block has a QC
+            if current_block_to_commit.qc == None:
+                break
+            # current_block_to_commit = self.block_to_block_id[current_block_to_commit.qc.vote_info.id]
+            current_block_to_commit = self.block_to_block_id[current_block_to_commit.qc]
 
         #prune
         # for i in self.spec_tree
@@ -56,4 +69,3 @@ def main():
     print(l.committed_block(14))
     print(l.committed_block(13))
     print(l.committed_block(12))
-

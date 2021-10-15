@@ -4,7 +4,7 @@ from utils import get_qc_with_max_round
 
 
 class BlockTree:
-    def __init__(self, validator, ledger, nfaulty):
+    def __init__(self, validator, ledger, nfaulty,block_block_id):
         self.pending_block_tree = []  # tree of blocks pending commitment
         self.pending_votes = None  # collected votes per block indexed by their LedgerInfo hash
         self.high_qc = None  # highest known QC
