@@ -40,7 +40,8 @@ class Validator (process):
                 last_round_tc=last_tc,
                 high_commit_qc=self.blocktree.high_commit_qc
             )
-            signed_proposal_msg = Cryptography.sign_message(proposal_msg, self.private_key)
+            signed_proposal_msg = Cryptography.sign_message(
+                proposal_msg, self.private_key)
             send(('ProposalMsg', signed_proposal_msg), to=self.replicas)
 
     def receive(msg=('LocalTimeout',)):
@@ -48,7 +49,8 @@ class Validator (process):
 
     def receive(msg=('ProposalMsg', signed_proposal_msg), from_=p):
 
-        proposal_msg = Cryptography.get_verified_message(signed_proposal_msg, public_keys_validators[p])
+        proposal_msg = Cryptography.get_verified_message(
+            signed_proposal_msg, public_keys_validators[p])
         if proposal_msg is not None:
             process_certificate_qc(proposal_msg.block.qc)
             process_certificate_qc(proposal_msg.high_commit_qc)
@@ -61,17 +63,18 @@ class Validator (process):
             vote_msg = self.safety.make_vote(
                 proposal_msg.block, proposal_msg.last_round_tc)
             if vote_msg is not None:
-                signed_vote_msg = Cryptography.sign_message(vote_msg, self.private_key)
+                signed_vote_msg = Cryptography.sign_message(
+                    vote_msg, self.private_key)
                 send(('VoteMsg', signed_vote_msg),
-                    to=self.leader_election.get_leader(round + 1))
+                     to=self.leader_election.get_leader(round + 1))
         else:
             # TODO: Add mechanism to handle this
             output(p, "'s ProposalMsg signature could not be verified")
 
-
     def receive(msg=('VoteMsg', signed_vote_msg), from_=p):
 
-        vote_msg = Cryptography.get_verified_message(signed_vote_msg, public_keys_validators[p])
+        vote_msg = Cryptography.get_verified_message(
+            signed_vote_msg, public_keys_validators[p])
         if vote_msg is not None:
             output("Recieved vote", vote_msg, "from ", p)
             qc = self.blocktree.process_vote(vote_msg)
@@ -83,7 +86,8 @@ class Validator (process):
             output(p, "'s VoteMsg signature could not be verified")
 
     def receive(msg=('TimeoutMsg', signed_timeout_msg), from_=p):
-        timeout_msg = Cryptography.get_verified_message(signed_timeout_msg, public_keys_validators[p])
+        timeout_msg = Cryptography.get_verified_message(
+            signed_timeout_msg, public_keys_validators[p])
         if timeout_msg is not None:
             process_certificate_qc(timeout_msg.tmo_info.high_qc)
             process_certificate_qc(timeout_msg.high_commit_qc)
@@ -96,13 +100,15 @@ class Validator (process):
             # TODO: Add mechanism to handle this
             output(p, "'s TimeoutMsg signature could not be verified")
 
-
     def receive(msg=('request', signed_req), from_=client):
 
-        req = Cryptography.get_verified_message(signed_req, public_keys_clients[client])
+        req = Cryptography.get_verified_message(
+            signed_req, public_keys_clients[client])
         if req is not None:
             output("Verified", client, "'s signature")
             output("received request from client", req)
+
+            req['resp_status'] = "success"
             send(('response', req), to=client)
         else:
             # TODO: Add mechanism to handle this, send something to client
