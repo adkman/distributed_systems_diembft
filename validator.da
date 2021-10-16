@@ -36,11 +36,13 @@ class Validator (process):
         await(received(('Done',), from_=parent()))
 
     def process_certificate_qc(qc):
+        Logging.log('process_certificate_qc', qc)
         self.blocktree.process_qc(qc)
         self.leader_election.update_leaders(qc)
         self.pacemaker.advance_round_qc(qc)
 
     def process_new_round_event(last_tc):
+        Logging.log('process_new_round_event', last_tc)
         if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
             block = self.blocktree.generate_block(
                 self.mempool.get_transactions(), self.pacemaker.current_round)
@@ -53,15 +55,17 @@ class Validator (process):
             )
             signed_proposal_msg = Cryptography.sign_message(proposal_msg)
             send(('ProposalMsg', signed_proposal_msg), to=self.replicas)
+            Logging.log_event("Sent", "ProposalMsg", proposal_msg, self.replicas)
 
-    def receive(msg=('LocalTimeout',)):
+    def receive(msg=('LocalTimeout',), from_=p):
+        Logging.log_event("Received", "LocalTimeout", None, p)
         self.pacemaker.local_timeout_round()
 
     def receive(msg=('ProposalMsg', signed_proposal_msg), from_=p):
         proposal_msg = Cryptography.get_verified_message(
             signed_proposal_msg, public_keys_validators[p])
         # output("Received proposal from ", p, proposal_msg)
-        Logging.log("Received", "ProposalMsg", proposal_msg, p)
+        Logging.log_event("Received", "ProposalMsg", proposal_msg, p)
         if proposal_msg is not None:
             if proposal_msg.block.qc is not None:
                 process_certificate_qc(proposal_msg.block.qc)
@@ -77,8 +81,10 @@ class Validator (process):
                 proposal_msg.block, proposal_msg.last_round_tc)
             if vote_msg is not None:
                 signed_vote_msg = Cryptography.sign_message(vote_msg)
+                next_leader = self.leader_election.get_leader(round + 1)
                 send(('VoteMsg', signed_vote_msg),
-                     to=self.leader_election.get_leader(round + 1))
+                     to=next_leader)
+                Logging.log_event("Sent", "VoteMsg", vote_msg, next_leader)
         else:
             # TODO: Add mechanism to handle this
             output(p, "'s ProposalMsg signature could not be verified")
@@ -86,6 +92,7 @@ class Validator (process):
     def receive(msg=('VoteMsg', signed_vote_msg), from_=p):
         vote_msg = Cryptography.get_verified_message(
             signed_vote_msg, public_keys_validators[p])
+        Logging.log_event("Received", "VoteMsg", vote_msg, p)
         if vote_msg is not None:
             output("Recieved vote", vote_msg, "from ", p)
             qc = self.blocktree.process_vote(vote_msg)
@@ -99,6 +106,7 @@ class Validator (process):
     def receive(msg=('TimeoutMsg', signed_timeout_msg), from_=p):
         timeout_msg = Cryptography.get_verified_message(
             signed_timeout_msg, public_keys_validators[p])
+        Logging.log_event("Received", "TimeoutMsg", timeout_msg, p)
         if timeout_msg is not None:
             process_certificate_qc(timeout_msg.tmo_info.high_qc)
             process_certificate_qc(timeout_msg.high_commit_qc)
@@ -115,6 +123,7 @@ class Validator (process):
 
         req = Cryptography.get_verified_message(
             signed_req, public_keys_clients[client])
+        Logging.log_event("Received", "request", req, client)
         if req is not None:
             # output("Verified", client, "'s signature")
             output("received request from client", req)

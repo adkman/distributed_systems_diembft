@@ -21,7 +21,7 @@ class Logging:
         filename = './logs/' + Logging.process_type + \
             "_" + str(Logging.process_id) + ".log"
         f = open(filename, 'a+')
-        if type(message) != dict:
+        if type(message) != dict and type(message) != int and type(message) != str and type(message) != list:
             message = message.__dict__
         print(timestamp, Logging.process_type, Logging.process_id,
               event, event_type, message, src_dest, src_dest_id, file=f)
@@ -34,7 +34,7 @@ class Logging:
         f = open(filename, 'a+')
         p_list = []
         for p in params:
-            if type(p) != dict:
+            if type(p) != dict and type(p) != int and type(p) != str and type(p) != list:
                 p = p.__dict__
             p_list.append(p)
 

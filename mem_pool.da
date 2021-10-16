@@ -1,3 +1,5 @@
+from logger_util import Logging
+
 class MemPool:
 
     def __init__(self, validator_id):
@@ -5,10 +7,12 @@ class MemPool:
         self.validator_id = validator_id
 
     def add_transaction(self, txn):
+        Logging.log('add_transaction', txn)
         if (txn['req_id'] not in self.pending_txns):
             self.pending_txns[txn['req_id']] = txn
 
     def get_transactions(self):
+        Logging.log('get_transactions', [])
         send_txns = list(self.pending_txns.values())
         self.pending_txns.clear()
         return send_txns
