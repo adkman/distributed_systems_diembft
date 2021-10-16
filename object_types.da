@@ -33,9 +33,9 @@ class QC:
         self.ledger_commit_info = ledger_commit_info
         self.signatures = signatures  # A quorum of signatures
         self.author = author  # The validator that produced the qc
-        self.author_signature = self.signatures
+        # self.author_signature = self.signatures
         self.signers = signers
-        # self.author_signature = Cryptography.sign_message(self.signatures)
+        self.author_signature = Cryptography.sign_message(self.signatures)
 
 
 class Block:
@@ -54,8 +54,12 @@ class TimeoutInfo:
         self.high_qc = high_qc
         self.sender = validator  # Added automatically when constructed
         # Signed automatically when constructed
-        self.signature = round + self.high_qc.round
-        # self.signature = Cryptography.sign_message(round, self.high_qc.round)
+        # self.signature = round + self.high_qc.round
+        if high_qc is None:
+            high_qc_round = None
+        else:
+            high_qc_round = high_qc.round
+        self.signature = Cryptography.sign_message(str(round)+","+str(high_qc_round))
 
 
 class TC:
