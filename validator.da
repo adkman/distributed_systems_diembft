@@ -32,6 +32,11 @@ class Validator (process):
         Logging.process_id = validator_id
         Logging.clients = clients
 
+        Logging.filename = './logs/' + Logging.process_type + \
+            "_" + str(Logging.process_id) + ".log"
+        f = open(Logging.filename,'w')
+        f.close()
+
     def run():
         await(received(('Done',), from_=parent()))
 

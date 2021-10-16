@@ -18,6 +18,11 @@ class Client(process):
         Logging.process_type = "Client"
         Logging.process_id = client_id
 
+        Logging.filename = './logs/' + Logging.process_type + \
+            "_" + str(Logging.process_id) + ".log"
+        f = open(Logging.filename,'w')
+        f.close()
+
     def run():
         for i in range(nops):
             pending_success_results[i] = list()
@@ -28,6 +33,7 @@ class Client(process):
             }
             signed_req = Cryptography.sign_message(req)
             send(('request', signed_req), to=validators)
+            Logging.log_event("Sent", "request", req, validators)
             await(i in final_results)
             output('Got final response for request', req)
             time.sleep(sleep_time)
@@ -36,6 +42,7 @@ class Client(process):
 
     def receive(msg=('response', resp), from_=validator):
         output("got response", resp)
+        Logging.log_event("Received", "response", resp, validator)
         req_id = resp['req_id']
         resp_status = resp['resp_status']
         if resp_status == "success":
@@ -43,6 +50,7 @@ class Client(process):
             if len(pending_success_results[req_id]) == self.f + 1:
                 final_results.add(req_id)
                 output("The transaction succeeded")
+
         else:
             pending_fail_results[req_id].append(resp)
             if len(pending_fail_results[req_id]) == self.f + 1:

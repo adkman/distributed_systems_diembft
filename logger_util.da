@@ -8,9 +8,13 @@ class Logging:
     process_id = -1
     replicas = []
     clients = []
+    filename = ""
 
     def log_event(event, event_type, message, proc=None):
-        if proc in Logging.replicas:
+        if type(proc) == set or type(proc) == list:
+            src_dest = "Validators"
+            src_dest_id = "ALL"
+        elif proc in Logging.replicas:
             src_dest = "Validator"
             src_dest_id = Logging.replicas.index(proc)
         elif proc in Logging.clients:
@@ -18,10 +22,8 @@ class Logging:
             src_dest_id = Logging.clients.index(proc)
 
         timestamp = datetime.datetime.now()
-        filename = './logs/' + Logging.process_type + \
-            "_" + str(Logging.process_id) + ".log"
-        f = open(filename, 'a+')
-        if type(message) != dict and type(message) != int and type(message) != str and type(message) != list:
+        f = open(Logging.filename, 'a+')
+        if message != None and type(message) != dict and type(message) != int and type(message) != str and type(message) != list:
             message = message.__dict__
         print(timestamp, Logging.process_type, Logging.process_id,
               event, event_type, message, src_dest, src_dest_id, file=f)
@@ -29,12 +31,10 @@ class Logging:
 
     def log(funcname, *params):
         timestamp = datetime.datetime.now()
-        filename = './logs/' + Logging.process_type + \
-            "_" + str(Logging.process_id) + ".log"
-        f = open(filename, 'a+')
+        f = open(Logging.filename, 'a+')
         p_list = []
         for p in params:
-            if type(p) != dict and type(p) != int and type(p) != str and type(p) != list:
+            if p != None and type(p) != dict and type(p) != int and type(p) != str and type(p) != list:
                 p = p.__dict__
             p_list.append(p)
 
