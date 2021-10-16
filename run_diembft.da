@@ -1,5 +1,6 @@
 from client import Client
 from cryptography import Cryptography
+from logger_util import Logging
 from validator import Validator
 
 
@@ -19,6 +20,10 @@ class RunDiemBFT(process):
         validators = new(Validator, num=nvalidators)
         clients = new(Client, num=nclients)
 
+        Logging.replicas.extend(list(validators))
+        Logging.clients.extend(list(clients))
+        print('LLLLLLLL', Logging.replicas, Logging.clients, validators, clients)
+
         for v in validators:
             private_key, public_key = Cryptography.generate_key()
             private_keys_validators[v] = private_key
@@ -30,7 +35,7 @@ class RunDiemBFT(process):
             public_keys_clients[c] = public_key
 
         for i, v in enumerate(validators):
-            setup({v}, (config, i, list(validators),
+            setup({v}, (config, i, list(validators), list(clients),
                         private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for i, c in enumerate(clients):

@@ -6,11 +6,13 @@ from mem_pool import MemPool
 from object_types import ProposalMsg
 from pacemaker import Pacemaker
 from safety import Safety
+from logger_util import Logging
+import datetime
 
 
 class Validator (process):
 
-    def setup(config, validator_id, replicas: list, private_key, public_keys_validators, public_keys_clients):
+    def setup(config, validator_id, replicas: list, clients: list, private_key, public_keys_validators, public_keys_clients):
         self.id_block = dict()
         self.ledger = Ledger(
             validator_id, self.id_block)
@@ -24,6 +26,11 @@ class Validator (process):
         self.leader_election = LeaderElection(
             validator_id, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
         Cryptography.private_key = self.private_key
+
+        Logging.replicas = replicas
+        Logging.process_type = "Validator"
+        Logging.process_id = validator_id
+        Logging.clients = clients
 
     def run():
         await(received(('Done',), from_=parent()))
@@ -53,7 +60,8 @@ class Validator (process):
     def receive(msg=('ProposalMsg', signed_proposal_msg), from_=p):
         proposal_msg = Cryptography.get_verified_message(
             signed_proposal_msg, public_keys_validators[p])
-        output("Received proposal from ", p, proposal_msg)
+        # output("Received proposal from ", p, proposal_msg)
+        Logging.log("Received", "ProposalMsg", proposal_msg, p)
         if proposal_msg is not None:
             if proposal_msg.block.qc is not None:
                 process_certificate_qc(proposal_msg.block.qc)

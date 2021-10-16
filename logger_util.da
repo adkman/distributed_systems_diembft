@@ -1,0 +1,29 @@
+import datetime
+import pickle
+
+
+class Logging:
+
+    process_type = ""
+    process_id = -1
+    replicas = []
+    clients = []
+
+    def log(event, event_type, message, proc=None):
+
+        if proc in Logging.replicas:
+            src_dest = "Validator"
+            src_dest_id = Logging.replicas.index(proc)
+        elif proc in Logging.clients:
+            src_dest = "Client"
+            src_dest_id = Logging.clients.index(proc)
+
+        timestamp = datetime.datetime.now()
+        filename = './logs/' + Logging.process_type + \
+            "_" + str(Logging.process_id) + ".log"
+        f = open(filename, 'a+')
+        if type(message) != dict:
+            message = message.__dict__
+        print(timestamp, Logging.process_type, Logging.process_id,
+              event, event_type, message, src_dest, src_dest_id, file=f)
+        f.close()

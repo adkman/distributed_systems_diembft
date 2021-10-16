@@ -1,11 +1,11 @@
 import time
 
 from cryptography import Cryptography
-
+from logger_util import Logging
 
 class Client(process):
 
-    def setup(config, client_id, validators: set, private_key, public_keys_validators):
+    def setup(config, client_id, validators: list, private_key, public_keys_validators):
         self.pending_success_results = dict()
         self.pending_fail_results = dict()
         self.final_results = set()
@@ -13,6 +13,10 @@ class Client(process):
         self.nops = config['nclientops']
         self.f = config['nfaulty']
         Cryptography.private_key = self.private_key
+
+        Logging.replicas = validators
+        Logging.process_type = "Client"
+        Logging.process_id = client_id
 
     def run():
         for i in range(nops):
