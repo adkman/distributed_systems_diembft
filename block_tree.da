@@ -1,6 +1,7 @@
 from cryptography import Cryptography
 from object_types import QC, Block
 from utils import get_qc_with_max_round
+from logger_util import Logging
 
 
 class BlockTree:
@@ -17,6 +18,7 @@ class BlockTree:
         self.f = nfaulty
 
     def execute_and_insert(self, block):
+        Logging.log('execute_and_insert', block)
         if block.qc is None:
             self.ledger.speculate(None, block.id, [
                 txn['command'] for txn in block.payload])
@@ -26,6 +28,7 @@ class BlockTree:
         # self.pending_block_tree.add(block) TODO
 
     def generate_block(self, txns, current_round):
+        Logging.log('generate_block', txns, current_round)
         qc = self.high_qc
         if qc is None:
             id = Cryptography.hash(self.validator, current_round,
@@ -42,7 +45,7 @@ class BlockTree:
         )
 
     def process_vote(self, vote_msg):
-        print("VoteMsg", vote_msg.sender)
+        Logging.log('process_vote', vote_msg)
         self.process_qc(vote_msg.high_commit_qc)
         vote_idx = Cryptography.hash(vote_msg.ledger_commit_info)
         if vote_idx in self.pending_votes:
@@ -52,10 +55,8 @@ class BlockTree:
             self.pending_votes[vote_idx] = {vote_msg.signature}
             self.pending_signers[vote_idx] = {vote_msg.sender}
 
-        print("faulty ", self.f, len(self.pending_votes[vote_idx]))
         if len(self.pending_votes[vote_idx]) == 2*self.f + 1:
             # print("signatures", self.pending_votes[vote_idx])
-            print("Hogaya qc")
             return QC(
                 vote_info=vote_msg.vote_info,
                 ledger_commit_info=vote_msg.ledger_commit_info,
@@ -72,6 +73,7 @@ class BlockTree:
         return None
 
     def process_qc(self, qc):
+        Logging.log('process_qc', qc)
         if qc is not None and qc.ledger_commit_info.commit_state_id != None:
             self.ledger.commit(qc.vote_info.parent_id)
             # self.pending_block_tree.prune(qc.vote_info.parent_id) TODO

@@ -20,10 +20,6 @@ class RunDiemBFT(process):
         validators = new(Validator, num=nvalidators)
         clients = new(Client, num=nclients)
 
-        Logging.replicas.extend(list(validators))
-        Logging.clients.extend(list(clients))
-        print('LLLLLLLL', Logging.replicas, Logging.clients, validators, clients)
-
         for v in validators:
             private_key, public_key = Cryptography.generate_key()
             private_keys_validators[v] = private_key
