@@ -46,6 +46,7 @@ class Block:
         self.payload = payload  # Proposed transaction(s)
         self.qc = qc  # QC for parent block
         self.id = id  # A unique digest of author, round, payload, qc.vote info.id and qc.signatures
+        self.author_signature = Cryptography.sign_message(self.payload)
 
 
 class TimeoutInfo:
@@ -63,12 +64,14 @@ class TimeoutInfo:
 
 
 class TC:
-    def __init__(self, round=None, tmo_high_qc_rounds=None, signatures=None):
+    def __init__(self, round=None, tmo_high_qc_rounds=None, signatures=None, author=None):
         self.round = round  # All timeout messages that form TC have the same round
         # A vector of 2f + 1 high qc round numbers of timeout messages that form TC
         self.tmo_high_qc_rounds = tmo_high_qc_rounds
         # A vector of 2f + 1 validator signatures on (round, respective high qc round)
         self.tmo_signatures = signatures
+        self.author = author
+        self.author_signature = Cryptography.sign_message(self.tmo_signatures)
 
 
 class TimeoutMsg:
