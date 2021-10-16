@@ -8,51 +8,50 @@ class Client(process):
     def setup(config, client_id, validators: list, private_key, public_keys_validators):
         self.pending_success_results = dict()
         self.pending_fail_results = dict()
-        self.final_results = set()
+        self.received_sufficient_responses = set()
         self.sleep_time = config['sleeptime']
         self.nops = config['nclientops']
         self.f = config['nfaulty']
+
         Cryptography.private_key = self.private_key
 
-        Logging.replicas = validators
-        Logging.process_type = "Client"
+        Logging.replicas = list(validators)
+        Logging.process_type = "client"
         Logging.process_id = client_id
-
         Logging.filename = './logs/' + Logging.process_type + \
             "_" + str(Logging.process_id) + ".log"
-        f = open(Logging.filename,'w')
-        f.close()
+        fp = open(Logging.filename,'w')
+        fp.close()
 
     def run():
         for i in range(nops):
-            pending_success_results[i] = list()
-            pending_fail_results[i] = list()
+            request_id = str(client_id) + "-" + str(i)
+            pending_success_results[request_id] = list()
+            pending_fail_results[request_id] = list()
             req = {
-                'req_id': str(client_id) + "-" + str(i),
+                'req_id': request_id,
                 'command': str(client_id) + "-" + str(i)
             }
             signed_req = Cryptography.sign_message(req)
             send(('request', signed_req), to=validators)
             Logging.log_event("Sent", "request", req, validators)
-            await(i in final_results)
-            output('Got final response for request', req)
-            time.sleep(sleep_time)
-
+            # await(request_id in received_sufficient_responses)
+            # output('Got final response for request', req)
+            # time.sleep(sleep_time)
+        await(len(received_sufficient_responses) == nops)
         send(('Done',), to=parent())
 
     def receive(msg=('response', resp), from_=validator):
-        output("got response", resp)
         Logging.log_event("Received", "response", resp, validator)
         req_id = resp['req_id']
         resp_status = resp['resp_status']
         if resp_status == "success":
             pending_success_results[req_id].append(resp)
             if len(pending_success_results[req_id]) == self.f + 1:
-                final_results.add(req_id)
-                output("The transaction succeeded")
-
+                received_sufficient_responses.add(req_id)
+                Logging.log("Received sufficient success replies from validators", req_id)
         else:
             pending_fail_results[req_id].append(resp)
             if len(pending_fail_results[req_id]) == self.f + 1:
-                final_results.add(req_id)
-                output("The transaction failed")
+                received_sufficient_responses.add(req_id)
+                Logging.log("Received sufficient failure replies from validators", req_id)

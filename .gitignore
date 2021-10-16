@@ -1,6 +1,6 @@
 __pycache__
 **.py
-**Ledger
+**.ledger
 logs/**
 test**
 **.log
