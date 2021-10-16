@@ -19,10 +19,14 @@ class Ledger:
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
         Logging.log('Ledger: get_state_id', prev_block_id,block_id,txns)
         if prev_block_id == None:
-            return Cryptography.hash(txns)
+            new_state_id = Cryptography.hash(txns)
+            Logging.log('Ledger: get_state_id: returns', new_state_id)
+            return new_state_id
 
         parent_state_id = self.block_id_to_state_id[prev_block_id]
-        return Cryptography.hash(parent_state_id, txns)
+        new_state_id = Cryptography.hash(parent_state_id, txns)
+        Logging.log('Ledger: get_state_id: returns', new_state_id)
+        return new_state_id
 
     def speculate(self, prev_block_id, block_id, txns):
         Logging.log('Ledger: speculate', prev_block_id, block_id, txns)
@@ -45,12 +49,16 @@ class Ledger:
     def pending_state(self, block_id):
         Logging.log('Ledger: pending_state', block_id)
         if block_id in self.block_id_to_state_id:
-            return self.block_id_to_state_id[block_id]
+            pending_state = self.block_id_to_state_id[block_id]
+            Logging.log('Ledger: pending_state: returns', pending_state)
+            return pending_state
+        Logging.log('Ledger: pending_state: returns', None)
         return None
 
     def commit(self, block_id):
         Logging.log('Ledger: commit', block_id)
         if block_id not in self.id_to_block:
+            Logging.log('Ledger: commit: did not commit', None)
             return
         current_block_to_commit = self.id_to_block[block_id]
         stack = []
@@ -90,7 +98,10 @@ class Ledger:
     def committed_block(self, block_id):
         Logging.log('Ledger: committed_block', block_id)
         if block_id in self.commited:
-            return self.id_to_block[block_id]
+            commited_block = self.id_to_block[block_id]
+            Logging.log('Ledger: committed_block: returns', commited_block)
+            return commited_block
+        Logging.log('Ledger: committed_block: returns', None)
         return None
 
 

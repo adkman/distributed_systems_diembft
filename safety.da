@@ -66,13 +66,16 @@ class Safety:
                 self.__commit_state_id_candidate(block.round, qc_round, qc_block_id),
                 Cryptography.hash(vote_info)
             )
-            #TODO: Match VoteMsg to actual class members 
-            return VoteMsg(
+            #TODO: Match VoteMsg to actual class members
+            vote_msg = VoteMsg(
                 vote_info,
                 ledger_commit_info,
                 self.blocktree.high_commit_qc,
                 self.validator
             )
+            Logging.log('Safety: make_vote: returns', vote_msg)
+            return vote_msg
+        Logging.log('Safety: make_vote: returns', None)
         return None
 
     def make_timeout(self, round, high_qc, last_tc):
@@ -80,8 +83,11 @@ class Safety:
         qc_round = high_qc.vote_info.round
         # TODO implement valid_signatures
         if (valid_signatures(high_qc, last_tc)) and (self.__safe_to_timeout(round, qc_round, last_tc)):
-            return TimeoutInfo(
+            tmo_info =  TimeoutInfo(
                 round,
                 high_qc
             )
+            Logging.log('Safety: make_timeout: returns', tmo_info)
+            return tmo_info
+        Logging.log('Safety: make_timeout: returns', None)
         return None

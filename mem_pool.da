@@ -15,6 +15,7 @@ class MemPool:
         Logging.log('MemPool: get_transactions', [])
         send_txns = list(self.pending_txns.values())
         self.pending_txns.clear()
+        Logging.log('MemPool: get_transactions: returns', send_txns)
         return send_txns
 
 def main():

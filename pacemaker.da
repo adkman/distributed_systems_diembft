@@ -50,6 +50,7 @@ class Pacemaker:
         Logging.log('Pacemaker: process_remote_timeout', tmo)
         tmo_info = tmo.tmo_info
         if tmo_info.round < self.current_round:
+            Logging.log('Pacemaker: process_remote_timeout: returns', None)
             return None
         # TODO: "senders" is not defined anywhere, read and fix this
         if tmo_info.sender not in self.pending_timeouts[tmo_info.round].senders:
@@ -60,23 +61,31 @@ class Pacemaker:
             self.stop_timer(self.current_round)
             self.local_timeout_round()  # Bracha timeout
         if len(self.pending_timeouts[tmo_info.round].senders) == 2*self.f + 1:
-            return TC(tmo_info.round, (t.high_qc.round for t in self.pending_timeouts[tmo_info.round]), (t.signature for t in self.pending_timeouts[tmo_info.round]))
+            tc = TC(tmo_info.round, (t.high_qc.round for t in self.pending_timeouts[tmo_info.round]), (t.signature for t in self.pending_timeouts[tmo_info.round]))
+            Logging.log('Pacemaker: process_remote_timeout: returns', tc)
+            return tc
+        Logging.log('Pacemaker: process_remote_timeout: returns', None)
         return None
 
     def advance_round_tc(self, tc):
         Logging.log('Pacemaker: advance_round_tc', tc)
         if tc == None or tc.round < self.current_round:
+            Logging.log('Pacemaker: advance_round_tc: returns', False)
             return False
         last_round_tc = tc
         self.start_timer(tc.round + 1)
+        Logging.log('Pacemaker: advance_round_tc: returns', True)
         return True
 
     def advance_round_qc(self, qc):
         Logging.log('Pacemaker: advance_round_qc', qc)
         if qc is None:
+            Logging.log('Pacemaker: advance_round_qc: returns', True)
             return True
         if qc.vote_info.round < self.current_round:
+            Logging.log('Pacemaker: advance_round_qc: returns', False)
             return False
         self.last_round_tc = None
         self.start_timer(qc.vote_info.round + 1)
+        Logging.log('Pacemaker: advance_round_qc: returns', True)
         return True
