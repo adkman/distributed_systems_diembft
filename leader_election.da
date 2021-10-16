@@ -16,13 +16,13 @@ class LeaderElection:
         self.reputation_leaders = dict()
 
     def get_leader(self, round):
-        Logging.log('get_leader', round)
+        Logging.log('LeaderElection: get_leader', round)
         if round in self.reputation_leaders:
             return self.reputation_leaders[round]
         return self.replicas[((round)//2) % len(self.replicas)]
 
     def update_leaders(self, qc):
-        Logging.log('update_leaders', qc)
+        Logging.log('LeaderElection: update_leaders', qc)
         if qc is None:
             return
         extended_round = qc.vote_info.parent_round
@@ -33,7 +33,7 @@ class LeaderElection:
                                     1] = self.elect_reputation_leader(qc)
 
     def elect_reputation_leader(self, qc):
-        Logging.log('elect_reputation_leader', qc)
+        Logging.log('LeaderElection: elect_reputation_leader', qc)
         active_validators = set()
         last_authors = set()
         current_qc = qc

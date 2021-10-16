@@ -18,7 +18,7 @@ class BlockTree:
         self.f = nfaulty
 
     def execute_and_insert(self, block):
-        Logging.log('execute_and_insert', block)
+        Logging.log('BlockTree: execute_and_insert', block)
         if block.qc is None:
             self.ledger.speculate(None, block.id, [
                 txn['command'] for txn in block.payload])
@@ -28,7 +28,7 @@ class BlockTree:
         # self.pending_block_tree.add(block) TODO
 
     def generate_block(self, txns, current_round):
-        Logging.log('generate_block', txns, current_round)
+        Logging.log('BlockTree: generate_block', txns, current_round)
         qc = self.high_qc
         if qc is None:
             id = Cryptography.hash(self.validator, current_round,
@@ -45,7 +45,7 @@ class BlockTree:
         )
 
     def process_vote(self, vote_msg):
-        Logging.log('process_vote', vote_msg)
+        Logging.log('BlockTree: process_vote', vote_msg)
         self.process_qc(vote_msg.high_commit_qc)
         vote_idx = Cryptography.hash(vote_msg.ledger_commit_info)
         if vote_idx in self.pending_votes:
@@ -73,7 +73,7 @@ class BlockTree:
         return None
 
     def process_qc(self, qc):
-        Logging.log('process_qc', qc)
+        Logging.log('BlockTree: process_qc', qc)
         if qc is not None and qc.ledger_commit_info.commit_state_id != None:
             self.ledger.commit(qc.vote_info.parent_id)
             # self.pending_block_tree.prune(qc.vote_info.parent_id) TODO
