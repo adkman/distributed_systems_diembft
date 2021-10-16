@@ -23,10 +23,10 @@ class Logging:
 
         timestamp = datetime.datetime.now()
         f = open(Logging.filename, 'a+')
-        if message != None and type(message) != dict and type(message) != int and type(message) != str and type(message) != list:
+        if message != None and type(message) not in [dict ,int, str , list, bytes]:
             message = message.__dict__
         print(timestamp, Logging.process_type, Logging.process_id,
-              event, event_type, message, src_dest, src_dest_id, file=f)
+              event, event_type, src_dest, src_dest_id, message, file=f)
         f.close()
 
     def log(funcname, *params):
@@ -34,7 +34,7 @@ class Logging:
         f = open(Logging.filename, 'a+')
         p_list = []
         for p in params:
-            if p != None and type(p) != dict and type(p) != int and type(p) != str and type(p) != list:
+            if p != None and type(p) not in [dict ,int, str , list, bytes]:
                 p = p.__dict__
             p_list.append(p)
 
