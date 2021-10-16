@@ -18,7 +18,9 @@ class LeaderElection:
     def get_leader(self, round):
         Logging.log('LeaderElection: get_leader', round)
         if round in self.reputation_leaders:
+            Logging.log('LeaderElection: get_leader: returns from reputated map', self.reputation_leaders[round])
             return self.reputation_leaders[round]
+        Logging.log('LeaderElection: get_leader: returns by round robin', self.replicas[((round)//2) % len(self.replicas)])
         return self.replicas[((round)//2) % len(self.replicas)]
 
     def update_leaders(self, qc):
@@ -59,10 +61,14 @@ class LeaderElection:
 
         if len(active_validators) > 0:
             random.seed(qc.vote_info.round)
+            Logging.log('LeaderElection: elect_reputation_leader: returns randomly seeded leader', random.choice(active_validators))
             return random.choice(active_validators)
         else:
             # print("aisa nahi hona chahiye")
             if qc is None:
+                Logging.log('LeaderElection: elect_reputation_leader: returns first leader since qc is None and len(active_validators) == 0', self.get_leader(0))
                 return self.get_leader(0)
             else:
+                Logging.log('LeaderElection: elect_reputation_leader: returns first leader since qc is not None and len(active_validators) == 0', self.get_leader(qc.vote_info.round)
+)
                 return self.get_leader(qc.vote_info.round)

@@ -50,7 +50,7 @@ class Validator (process):
         if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
             block = self.blocktree.generate_block(
                 self.mempool.get_transactions(), self.pacemaker.current_round)
-            self.id_block[block.id] = block
+            
             proposal_msg = ProposalMsg(
                 block=block,
                 last_round_tc=last_tc,
@@ -71,6 +71,7 @@ class Validator (process):
         # output("Received proposal from ", p, proposal_msg)
         Logging.log_event("Received", "ProposalMsg", proposal_msg, p)
         if proposal_msg is not None:
+        
             if proposal_msg.block.qc is not None:
                 process_certificate_qc(proposal_msg.block.qc)
             if proposal_msg.high_commit_qc is not None:

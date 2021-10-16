@@ -5,7 +5,7 @@ from logger_util import Logging
 
 
 class BlockTree:
-    def __init__(self, validator_id, replicas, ledger, nfaulty, block_block_id):
+    def __init__(self, validator_id, replicas, ledger, nfaulty, id_block):
         self.pending_block_tree = []  # tree of blocks pending commitment
         # collected votes per block indexed by their LedgerInfo hash
         self.pending_votes = dict()
@@ -16,9 +16,11 @@ class BlockTree:
         self.validator_id = validator_id
         self.ledger = ledger
         self.f = nfaulty
+        self.id_block = id_block
 
     def execute_and_insert(self, block):
         Logging.log('BlockTree: execute_and_insert', block)
+        self.id_block[block.id] = block
         if block.qc is None:
             self.ledger.speculate(None, block.id, [
                 txn['command'] for txn in block.payload])
@@ -36,13 +38,15 @@ class BlockTree:
         else:
             id = Cryptography.hash(self.validator, current_round,
                                    txns, qc.vote_info.id, qc.signatures)
-        return Block(
+        block = Block(
             self.validator,
             current_round,
             txns,
             self.high_qc,
             id
         )
+        Logging.log('BlockTree: generate_block: returns', block)
+        return block
 
     def process_vote(self, vote_msg):
         Logging.log('BlockTree: process_vote', vote_msg)
@@ -57,13 +61,16 @@ class BlockTree:
 
         if len(self.pending_votes[vote_idx]) == 2*self.f + 1:
             # print("signatures", self.pending_votes[vote_idx])
-            return QC(
+            qc = QC(
                 vote_info=vote_msg.vote_info,
                 ledger_commit_info=vote_msg.ledger_commit_info,
                 signatures=self.pending_votes[vote_idx],
                 author=self.validator,
                 signers = self.pending_signers[vote_idx]
             )
+            Logging.log('BlockTree: process_vote: returns', qc)
+
+            return qc
         # This is the structure of QC
         # self.vote_info = vote_info
         # self.ledger_commit_info = ledger_commit_info # It had ledger_commit_state_id and hash of vote info
