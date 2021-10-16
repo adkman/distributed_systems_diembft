@@ -28,6 +28,7 @@ class BlockTree:
             self.ledger.speculate(block.qc.vote_info.id, block.id, [
                 txn['command'] for txn in block.payload])
         # self.pending_block_tree.add(block) TODO
+        Logging.log('BlockTree: execute_and_insert ends', block)
 
     def generate_block(self, txns, current_round):
         Logging.log('BlockTree: generate_block', txns, current_round)
@@ -82,3 +83,4 @@ class BlockTree:
             self.high_commit_qc = get_qc_with_max_round(
                 qc, self.high_commit_qc)
         self.high_qc = get_qc_with_max_round(qc, self.high_qc)
+        Logging.log('BlockTree: process_qc ends', qc)

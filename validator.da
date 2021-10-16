@@ -46,6 +46,7 @@ class Validator (process):
         self.blocktree.process_qc(qc)
         self.leader_election.update_leaders(qc)
         self.pacemaker.advance_round_qc(qc)
+        Logging.log('Validator: process_certificate_qc ended', qc)
 
     def process_new_round_event(last_tc):
         Logging.log('Validator: process_new_round_event', last_tc)
@@ -79,10 +80,12 @@ class Validator (process):
             send(('ProposalMsg', proposal_msg), to=self.replicas)
             Logging.log_event("Sent", "ProposalMsg",
                               proposal_msg, self.replicas)
+        Logging.log("Validator: process_new_round_event ends", None)
 
     def receive(msg=('LocalTimeout',), from_=p):
         Logging.log_event("Received", "LocalTimeout", None, p)
         self.pacemaker.local_timeout_round()
+
 
     # def receive(msg=('ProposalMsg', signed_proposal_msg), from_=p):
     def receive(msg=('ProposalMsg', proposal_msg), from_=p):
@@ -93,7 +96,7 @@ class Validator (process):
         Logging.log_event("Received", "ProposalMsg", proposal_msg, p)
         if proposal_msg is not None:
             self.can_execute_command = False
-            if proposal_msg.block.qc is not None:
+            if proposal_msg.block.qc is not None and p != replicas[validator_id]:
                 process_certificate_qc(proposal_msg.block.qc)
             if proposal_msg.high_commit_qc is not None:
                 process_certificate_qc(proposal_msg.high_commit_qc)
@@ -105,6 +108,7 @@ class Validator (process):
             if p != replicas[validator_id]:
                 # Validate the transactions in current mempool with the received txns
                 if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
+                    Logging.log("Not processing the Proposal message as transactions are not valid", None)
                     return
 
             self.blocktree.execute_and_insert(proposal_msg.block)
@@ -115,12 +119,17 @@ class Validator (process):
                 next_leader = self.leader_election.get_leader(round + 1)
                 # send(('VoteMsg', signed_vote_msg),
                 #      to=next_leader)
+                Logging.log("Problem here?",None)
+                Logging.log("VoteMsg",vote_msg)
+                Logging.log("Leader", next_leader)
                 send(('VoteMsg', vote_msg),
                      to=next_leader)
+
                 Logging.log_event("Sent", "VoteMsg", vote_msg, next_leader)
         else:
             # TODO: Add mechanism to handle this
             output(p, "'s ProposalMsg signature could not be verified")
+        
 
     # def receive(msg=('VoteMsg', signed_vote_msg), from_=p):
     def receive(msg=('VoteMsg', vote_msg), from_=p):
@@ -132,6 +141,7 @@ class Validator (process):
             if qc is not None:
                 process_certificate_qc(qc)
                 process_new_round_event(None)
+
         else:
             # TODO: Add mechanism to handle this
             output(p, "'s VoteMsg signature could not be verified")
