@@ -9,8 +9,7 @@ class Logging:
     replicas = []
     clients = []
 
-    def log(event, event_type, message, proc=None):
-
+    def log_event(event, event_type, message, proc=None):
         if proc in Logging.replicas:
             src_dest = "Validator"
             src_dest_id = Logging.replicas.index(proc)
@@ -26,4 +25,19 @@ class Logging:
             message = message.__dict__
         print(timestamp, Logging.process_type, Logging.process_id,
               event, event_type, message, src_dest, src_dest_id, file=f)
+        f.close()
+
+    def log(funcname, *params):
+        timestamp = datetime.datetime.now()
+        filename = './logs/' + Logging.process_type + \
+            "_" + str(Logging.process_id) + ".log"
+        f = open(filename, 'a+')
+        p_list = []
+        for p in params:
+            if type(p) != dict:
+                p = p.__dict__
+            p_list.append(p)
+
+        print(timestamp, Logging.process_type, Logging.process_id,
+              funcname, p_list, file=f)
         f.close()

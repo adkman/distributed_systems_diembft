@@ -3,3 +3,4 @@ __pycache__
 **Ledger
 logs/**
 test**
+**.log
