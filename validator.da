@@ -155,16 +155,15 @@ class Validator (process):
             # TODO: Add mechanism to handle this
             output(p, "'s TimeoutMsg signature could not be verified")
 
-    # def receive(msg=('request', signed_req), from_=client):
-    def receive(msg=('request', req), from_=client):
+    def receive(msg=('request', signed_req), from_=client):
         Logging.log("Receving Request", None)
 
-        # req = Cryptography.get_verified_message(
-        #     signed_req, public_keys_clients[client])
+        req = Cryptography.get_verified_message(
+            signed_req, public_keys_clients[client])
         Logging.log_event("Received", "request", req, client)
         if req is not None:
             # output("Verified", client, "'s signature")
-            output("received request from client", req)
+            # output("received request from client", req)
 
             req['client'] = client
             self.mempool.add_transaction(req)
