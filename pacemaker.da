@@ -61,7 +61,9 @@ class Pacemaker:
             self.stop_timer(self.current_round)
             self.local_timeout_round()  # Bracha timeout
         if len(self.pending_timeouts[tmo_info.round].senders) == 2*self.f + 1:
-            tc = TC(tmo_info.round, set([t.high_qc.round for t in self.pending_timeouts[tmo_info.round]]), set([t.signature for t in self.pending_timeouts[tmo_info.round]]))
+            tmo_high_qc_rounds = set([t.high_qc.round for t in self.pending_timeouts[tmo_info.round]])
+            signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
+            tc = TC(tmo_info.round, tmo_high_qc_rounds, signatures, validator_id)
             Logging.log('Pacemaker: process_remote_timeout: returns', tc)
             return tc
         Logging.log('Pacemaker: process_remote_timeout: returns', None)

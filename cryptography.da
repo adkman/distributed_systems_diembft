@@ -28,5 +28,17 @@ class Cryptography:
         except:
             return None
 
-    def valid_signatures(*p):
-        return True
+    def valid_signatures(messages):
+        all_signatures_valid = True
+        for message in messages:
+            if message is None:
+                is_signature_valid = True
+            else:
+                is_signature_valid = Cryptography.valid_signature(message)
+            all_signatures_valid = all_signatures_valid and is_signature_valid
+        return all_signatures_valid
+
+    #Message Type is Block, QC, TC
+    def valid_signature(message):
+        signature = Cryptography.get_verified_message(message.author_signature, Cryptography.public_keys_validators[Cryptography.replicas[message.author]])
+        return signature is not None
