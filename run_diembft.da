@@ -3,6 +3,8 @@ from cryptography import Cryptography
 from logger_util import Logging
 from validator import Validator
 
+import os
+
 
 class RunDiemBFT(process):
 
@@ -16,6 +18,11 @@ class RunDiemBFT(process):
         public_keys_validators = {}
         private_keys_clients = {}
         public_keys_clients = {}
+
+        if not os.path.exists('./logs'):
+            os.makedirs('./logs')
+        if not os.path.exists('./ledgers'):
+            os.makedirs('./ledgers')
 
         validators = new(Validator, num=nvalidators)
         clients = new(Client, num=nclients)
