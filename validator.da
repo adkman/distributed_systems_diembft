@@ -7,7 +7,6 @@ from object_types import ProposalMsg
 from pacemaker import Pacemaker
 from safety import Safety
 from logger_util import Logging
-import datetime
 
 
 class Validator (process):
@@ -41,13 +40,13 @@ class Validator (process):
         await(received(('Done',), from_=parent()))
 
     def process_certificate_qc(qc):
-        Logging.log('process_certificate_qc', qc)
+        Logging.log('Validator: process_certificate_qc', qc)
         self.blocktree.process_qc(qc)
         self.leader_election.update_leaders(qc)
         self.pacemaker.advance_round_qc(qc)
 
     def process_new_round_event(last_tc):
-        Logging.log('process_new_round_event', last_tc)
+        Logging.log('Validator: process_new_round_event', last_tc)
         if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
             block = self.blocktree.generate_block(
                 self.mempool.get_transactions(), self.pacemaker.current_round)
