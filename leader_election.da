@@ -68,13 +68,8 @@ class LeaderElection:
         active_validators = active_validators.difference(
             last_authors)
 
-        if len(active_validators) > 0:
-            random.seed(qc.vote_info.round)
-            leader_indx = random.choice(list(active_validators))
-            Logging.log('LeaderElection: elect_reputation_leader: returns randomly seeded leader index and corresponding leader as',
-                        leader_indx, self.replicas[leader_indx])
-            return self.replicas[leader_indx]
-        else:
-            Logging.log('LeaderElection: elect_reputation_leader: returns round robin leader since qc is not None and len(active_validators) == 0',
-                        self.get_leader(qc.vote_info.round))
-            return self.get_leader(qc.vote_info.round)
+        random.seed(qc.vote_info.round)
+        leader_indx = random.choice(list(active_validators))
+        Logging.log('LeaderElection: elect_reputation_leader: returns randomly seeded leader index and corresponding leader as',
+                    leader_indx, self.replicas[leader_indx])
+        return self.replicas[leader_indx]
