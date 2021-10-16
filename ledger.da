@@ -1,5 +1,5 @@
 from cryptography import Cryptography
-
+from logger_util import Logging
 
 class Ledger:
 
@@ -17,7 +17,7 @@ class Ledger:
         file.close()
 
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
-
+        Logging.log('get_state_id', prev_block_id,block_id,txns)
         if prev_block_id == None:
             return Cryptography.hash(txns)
 
@@ -25,7 +25,7 @@ class Ledger:
         return Cryptography.hash(parent_state_id, txns)
 
     def speculate(self, prev_block_id, block_id, txns):
-        
+        Logging.log('speculate', prev_block_id, block_id, txns)
         if prev_block_id == None:
             self.speculate_tree[self.genesis] = [block_id]
             self.speculate_tree[block_id] = []
@@ -43,11 +43,13 @@ class Ledger:
         self.block_id_to_state_id[block_id] = state_id
 
     def pending_state(self, block_id):
+        Logging.log('pending_state', block_id)
         if block_id in self.block_id_to_state_id:
             return self.block_id_to_state_id[block_id]
         return None
 
     def commit(self, block_id):
+        Logging.log('commit', block_id)
         if block_id not in self.id_to_block:
             return
         current_block_to_commit = self.id_to_block[block_id]
@@ -86,6 +88,7 @@ class Ledger:
         # for i in self.spec_tree
 
     def committed_block(self, block_id):
+        Logging.log('committed_block', block_id)
         if block_id in self.commited:
             return self.id_to_block[block_id]
         return None

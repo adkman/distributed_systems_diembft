@@ -1,5 +1,5 @@
 import random
-
+from logger_util import Logging
 
 class LeaderElection:
 
@@ -16,11 +16,13 @@ class LeaderElection:
         self.reputation_leaders = dict()
 
     def get_leader(self, round):
+        Logging.log('get_leader', round)
         if round in self.reputation_leaders:
             return self.reputation_leaders[round]
         return self.replicas[((round)//2) % len(self.replicas)]
 
     def update_leaders(self, qc):
+        Logging.log('update_leaders', qc)
         if qc is None:
             return
         extended_round = qc.vote_info.parent_round
@@ -31,6 +33,7 @@ class LeaderElection:
                                     1] = self.elect_reputation_leader(qc)
 
     def elect_reputation_leader(self, qc):
+        Logging.log('elect_reputation_leader', qc)
         active_validators = set()
         last_authors = set()
         current_qc = qc
@@ -58,7 +61,7 @@ class LeaderElection:
             random.seed(qc.vote_info.round)
             return random.choice(active_validators)
         else:
-            print("aisa nahi hona chahiye")
+            # print("aisa nahi hona chahiye")
             if qc is None:
                 return self.get_leader(0)
             else:
