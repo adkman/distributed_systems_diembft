@@ -23,8 +23,8 @@ class Logging:
 
         timestamp = datetime.datetime.now()
         f = open(Logging.filename, 'a+')
-        if message != None and hasattr(message, '__dict__'):
-            message = message.__dict__
+        # if message != None and hasattr(message, '__dict__'):
+        #     message = message.__dict__
         print(timestamp, Logging.process_type, Logging.process_id,
               event, event_type, src_dest, src_dest_id, message, file=f)
         f.close()

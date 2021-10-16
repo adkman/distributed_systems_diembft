@@ -74,8 +74,9 @@ class Validator (process):
                 high_commit_qc=self.blocktree.high_commit_qc,
                 validator=validator_id
             )
-            signed_proposal_msg = Cryptography.sign_message(proposal_msg)
-            send(('ProposalMsg', signed_proposal_msg), to=self.replicas)
+            # signed_proposal_msg = Cryptography.sign_message(proposal_msg)
+            # send(('ProposalMsg', signed_proposal_msg), to=self.replicas)
+            send(('ProposalMsg', proposal_msg), to=self.replicas)
             Logging.log_event("Sent", "ProposalMsg",
                               proposal_msg, self.replicas)
 
@@ -83,10 +84,11 @@ class Validator (process):
         Logging.log_event("Received", "LocalTimeout", None, p)
         self.pacemaker.local_timeout_round()
 
-    def receive(msg=('ProposalMsg', signed_proposal_msg), from_=p):
+    # def receive(msg=('ProposalMsg', signed_proposal_msg), from_=p):
+    def receive(msg=('ProposalMsg', proposal_msg), from_=p):
         Logging.log("Receving ProposalMsg", None)
-        proposal_msg = Cryptography.get_verified_message(
-            signed_proposal_msg, public_keys_validators[p])
+        # proposal_msg = Cryptography.get_verified_message(
+        #     signed_proposal_msg, public_keys_validators[p])
         # output("Received proposal from ", p, proposal_msg)
         Logging.log_event("Received", "ProposalMsg", proposal_msg, p)
         if proposal_msg is not None:
@@ -109,19 +111,21 @@ class Validator (process):
             vote_msg = self.safety.make_vote(
                 proposal_msg.block, proposal_msg.last_round_tc)
             if vote_msg is not None:
-                signed_vote_msg = Cryptography.sign_message(vote_msg)
+                # signed_vote_msg = Cryptography.sign_message(vote_msg)
                 next_leader = self.leader_election.get_leader(round + 1)
-                send(('VoteMsg', signed_vote_msg),
+                # send(('VoteMsg', signed_vote_msg),
+                #      to=next_leader)
+                send(('VoteMsg', vote_msg),
                      to=next_leader)
                 Logging.log_event("Sent", "VoteMsg", vote_msg, next_leader)
         else:
             # TODO: Add mechanism to handle this
             output(p, "'s ProposalMsg signature could not be verified")
 
-    def receive(msg=('VoteMsg', signed_vote_msg), from_=p):
-        Logging.log("Receving VoteMsg", None)
-        vote_msg = Cryptography.get_verified_message(
-            signed_vote_msg, public_keys_validators[p])
+    # def receive(msg=('VoteMsg', signed_vote_msg), from_=p):
+    def receive(msg=('VoteMsg', vote_msg), from_=p):
+        # vote_msg = Cryptography.get_verified_message(
+        #     signed_vote_msg, public_keys_validators[p])
         Logging.log_event("Received", "VoteMsg", vote_msg, p)
         if vote_msg is not None:
             qc = self.blocktree.process_vote(vote_msg)
@@ -133,10 +137,11 @@ class Validator (process):
             output(p, "'s VoteMsg signature could not be verified")
         Logging.log("Received VoteMsg ends g", None)
 
-    def receive(msg=('TimeoutMsg', signed_timeout_msg), from_=p):
+    # def receive(msg=('TimeoutMsg', signed_timeout_msg), from_=p):
+    def receive(msg=('TimeoutMsg', timeout_msg), from_=p):
         Logging.log("Receving TimeoutMsg", None)
-        timeout_msg = Cryptography.get_verified_message(
-            signed_timeout_msg, public_keys_validators[p])
+        # timeout_msg = Cryptography.get_verified_message(
+        #     signed_timeout_msg, public_keys_validators[p])
         Logging.log_event("Received", "TimeoutMsg", timeout_msg, p)
         if timeout_msg is not None:
             process_certificate_qc(timeout_msg.tmo_info.high_qc)
@@ -150,11 +155,12 @@ class Validator (process):
             # TODO: Add mechanism to handle this
             output(p, "'s TimeoutMsg signature could not be verified")
 
-    def receive(msg=('request', signed_req), from_=client):
+    # def receive(msg=('request', signed_req), from_=client):
+    def receive(msg=('request', req), from_=client):
         Logging.log("Receving Request", None)
 
-        req = Cryptography.get_verified_message(
-            signed_req, public_keys_clients[client])
+        # req = Cryptography.get_verified_message(
+        #     signed_req, public_keys_clients[client])
         Logging.log_event("Received", "request", req, client)
         if req is not None:
             # output("Verified", client, "'s signature")

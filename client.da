@@ -31,8 +31,9 @@ class Client(process):
                 'req_id': str(client_id) + "-" + str(i),
                 'command': str(client_id) + "-" + str(i)
             }
-            signed_req = Cryptography.sign_message(req)
-            send(('request', signed_req), to=validators)
+            # signed_req = Cryptography.sign_message(req)
+            # send(('request', signed_req), to=validators)
+            send(('request', req), to=validators)
             Logging.log_event("Sent", "request", req, validators)
             await(i in final_results)
             output('Got final response for request', req)
