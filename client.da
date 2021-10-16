@@ -28,7 +28,7 @@ class Client(process):
             pending_success_results[i] = list()
             pending_fail_results[i] = list()
             req = {
-                'req_id': i,
+                'req_id': str(client_id) + "-" + str(i),
                 'command': str(client_id) + "-" + str(i)
             }
             signed_req = Cryptography.sign_message(req)

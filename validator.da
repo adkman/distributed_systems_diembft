@@ -2,11 +2,11 @@ from block_tree import BlockTree
 from cryptography import Cryptography
 from leader_election import LeaderElection
 from ledger import Ledger
+from logger_util import Logging
 from mem_pool import MemPool
 from object_types import ProposalMsg
 from pacemaker import Pacemaker
 from safety import Safety
-from logger_util import Logging
 
 
 class Validator (process):
@@ -33,8 +33,9 @@ class Validator (process):
 
         Logging.filename = './logs/' + Logging.process_type + \
             "_" + str(Logging.process_id) + ".log"
-        f = open(Logging.filename,'w')
+        f = open(Logging.filename, 'w')
         f.close()
+        self.can_execute_command = True
 
     def run():
         await(received(('Done',), from_=parent()))
@@ -48,9 +49,24 @@ class Validator (process):
     def process_new_round_event(last_tc):
         Logging.log('Validator: process_new_round_event', last_tc)
         if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
+            if self.mempool.peek_pool() == 0:
+                prev_block = self.id_block[self.blocktree.high_qc.vote_info.id]
+                prev_block_txn_len = len(prev_block.payload)
+                prev_qc = prev_block.qc
+                if prev_qc is not None:
+                    prev_prev_block = self.id_block[prev_qc.vote_info.id]
+                    prev_prev_block_txn_len = len(prev_prev_block.payload)
+                else:
+                    prev_prev_block_txn_len = 0
+
+                if prev_block_txn_len == 0 and prev_prev_block_txn_len == 0:
+                    Logging.log(
+                        'Validator: process_new_round_event: returned as no transactions in mempool', last_tc)
+                    return
+
             block = self.blocktree.generate_block(
                 self.mempool.get_transactions(), self.pacemaker.current_round)
-            
+
             proposal_msg = ProposalMsg(
                 block=block,
                 last_round_tc=last_tc,
@@ -59,7 +75,8 @@ class Validator (process):
             )
             signed_proposal_msg = Cryptography.sign_message(proposal_msg)
             send(('ProposalMsg', signed_proposal_msg), to=self.replicas)
-            Logging.log_event("Sent", "ProposalMsg", proposal_msg, self.replicas)
+            Logging.log_event("Sent", "ProposalMsg",
+                              proposal_msg, self.replicas)
 
     def receive(msg=('LocalTimeout',), from_=p):
         Logging.log_event("Received", "LocalTimeout", None, p)
@@ -71,7 +88,7 @@ class Validator (process):
         # output("Received proposal from ", p, proposal_msg)
         Logging.log_event("Received", "ProposalMsg", proposal_msg, p)
         if proposal_msg is not None:
-        
+            self.can_execute_command = False
             if proposal_msg.block.qc is not None:
                 process_certificate_qc(proposal_msg.block.qc)
             if proposal_msg.high_commit_qc is not None:
@@ -81,6 +98,11 @@ class Validator (process):
             leader = self.leader_election.get_leader(round)
             if proposal_msg.block.round != round or proposal_msg.sender != leader or proposal_msg.block.author != leader:
                 return
+            if p != replicas[validator_id]:
+                # Validate the transactions in current mempool with the received txns
+                if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
+                    return
+
             self.blocktree.execute_and_insert(proposal_msg.block)
             vote_msg = self.safety.make_vote(
                 proposal_msg.block, proposal_msg.last_round_tc)
@@ -136,7 +158,10 @@ class Validator (process):
             req['client'] = client
             self.mempool.add_transaction(req)
 
-            process_new_round_event(None)
+            # process_new_round_event(None)
+            if self.can_execute_command:
+                process_new_round_event(None)
+                self.can_execute_command = False
 
             # req['resp_status'] = "success"
             # send(('response', req), to=client)
