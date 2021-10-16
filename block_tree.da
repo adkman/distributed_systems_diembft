@@ -33,13 +33,13 @@ class BlockTree:
         Logging.log('BlockTree: generate_block', txns, current_round)
         qc = self.high_qc
         if qc is None:
-            id = Cryptography.hash(self.validator, current_round,
+            id = Cryptography.hash(self.validator_id, current_round,
                                    txns)
         else:
-            id = Cryptography.hash(self.validator, current_round,
+            id = Cryptography.hash(self.validator_id, current_round,
                                    txns, qc.vote_info.id, qc.signatures)
         block = Block(
-            self.validator,
+            self.validator_id,
             current_round,
             txns,
             self.high_qc,
@@ -65,18 +65,13 @@ class BlockTree:
                 vote_info=vote_msg.vote_info,
                 ledger_commit_info=vote_msg.ledger_commit_info,
                 signatures=self.pending_votes[vote_idx],
-                author=self.validator,
+                author=self.validator_id,
                 signers = self.pending_signers[vote_idx]
             )
             Logging.log('BlockTree: process_vote: returns', qc)
-
             return qc
-        # This is the structure of QC
-        # self.vote_info = vote_info
-        # self.ledger_commit_info = ledger_commit_info # It had ledger_commit_state_id and hash of vote info
-        # self.signatures = signatures # A quorum of signatures
-        # self.author = validator # The validator that produced the qc ----- Is this the leader of the block
-        # self.author_signature = signu(self.signatures)
+
+        Logging.log('BlockTree: process_vote: returns', None)
         return None
 
     def process_qc(self, qc):

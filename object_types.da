@@ -81,6 +81,5 @@ class ProposalMsg:
         # TC for block.round − 1 if block.qc.vote info.round 6= block.round − 1, else ⊥
         self.last_round_tc = last_round_tc
         self.high_commit_qc = high_commit_qc  # QC to synchronize on committed blocks
-        self.signature = self.block.id
         self.sender = validator
-        # self.signature = Cryptography.sign_message(self.block.id)
+        self.signature = Cryptography.sign_message(self.block.id)

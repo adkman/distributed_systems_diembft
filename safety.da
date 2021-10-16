@@ -71,7 +71,7 @@ class Safety:
                 vote_info,
                 ledger_commit_info,
                 self.blocktree.high_commit_qc,
-                self.validator
+                self.validator_id
             )
             Logging.log('Safety: make_vote: returns', vote_msg)
             return vote_msg
@@ -81,11 +81,12 @@ class Safety:
     def make_timeout(self, round, high_qc, last_tc):
         Logging.log('Safety: make_timeout', round, high_qc, last_tc)
         qc_round = high_qc.vote_info.round
-        # TODO implement valid_signatures
-        if (valid_signatures(high_qc, last_tc)) and (self.__safe_to_timeout(round, qc_round, last_tc)):
+        # TODO implement valid_signatures and params for tmo_info
+        if (Cryptography.valid_signatures(high_qc, last_tc)) and (self.__safe_to_timeout(round, qc_round, last_tc)):
             tmo_info =  TimeoutInfo(
                 round,
-                high_qc
+                high_qc,
+                self.validator_id
             )
             Logging.log('Safety: make_timeout: returns', tmo_info)
             return tmo_info

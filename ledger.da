@@ -92,6 +92,8 @@ class Ledger:
                 file.write(txn['command']+'\n')
         file.close()
 
+        Logging.log('Ledger: commit: ends', None)
+
         # prune
         # for i in self.spec_tree
 
