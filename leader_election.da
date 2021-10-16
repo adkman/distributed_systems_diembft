@@ -38,9 +38,6 @@ class LeaderElection:
         extended_round = qc.vote_info.parent_round
         qc_round = qc.vote_info.round
         current_round = self.pacemaker.current_round
-        Logging.log("UPdate leaders info", extended_round,
-                    qc_round, current_round)
-        # TODO Commenting reputation leaders temporarily
         if extended_round + 1 == qc_round and qc_round + 1 == current_round:
             self.reputation_leaders[current_round +
                                     1] = self.elect_reputation_leader(qc)
@@ -60,24 +57,16 @@ class LeaderElection:
             if current_block is None:
                 break
             block_author = current_block.author
-            Logging.log("signers", current_qc.signers, current_qc)
             if i < self.window_size:
                 active_validators = active_validators.union(
                     current_qc.signers)
-            Logging.log("active_validators", active_validators)
-            Logging.log("last_authors", last_authors)
             if len(last_authors) < self.exclude_size:
                 last_authors = last_authors.union({block_author})
-            Logging.log("last_authors", last_authors)
             current_qc = current_block.qc
             i = i + 1
-            Logging.log("current_qc", current_block.qc)
-        Logging.log("While Loop Done", None)
 
-        Logging.log("active_validators", active_validators)
         active_validators = active_validators.difference(
             last_authors)
-        Logging.log("active_validators Done", active_validators)
 
         if len(active_validators) > 0:
             random.seed(qc.vote_info.round)

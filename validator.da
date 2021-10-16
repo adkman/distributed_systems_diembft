@@ -119,9 +119,6 @@ class Validator (process):
                 next_leader = self.leader_election.get_leader(round + 1)
                 # send(('VoteMsg', signed_vote_msg),
                 #      to=next_leader)
-                Logging.log("Problem here?",None)
-                Logging.log("VoteMsg",vote_msg)
-                Logging.log("Leader", next_leader)
                 send(('VoteMsg', vote_msg),
                      to=next_leader)
 
