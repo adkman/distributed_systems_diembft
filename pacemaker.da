@@ -93,10 +93,8 @@ class Pacemaker:
             tc = TC(tmo_info.round, tmo_high_qc_rounds,
                     signatures, self.validator_id)
             Logging.log('Pacemaker: process_remote_timeout: returns', tc)
-            print("Exited with TC")
             return tc
         Logging.log('Pacemaker: process_remote_timeout: returns', None)
-        print("Exited without TC")
         return None
 
     def advance_round_tc(self, tc):
@@ -104,7 +102,7 @@ class Pacemaker:
         if tc == None or tc.round < self.current_round:
             Logging.log('Pacemaker: advance_round_tc: returns', False)
             return False
-        last_round_tc = tc
+        self.last_round_tc = tc
         self.start_timer(tc.round + 1)
         Logging.log('Pacemaker: advance_round_tc: returns', True)
         return True

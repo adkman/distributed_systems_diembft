@@ -208,7 +208,6 @@ class Validator (process):
             process_certificate_qc(timeout_msg.high_commit_qc)
             self.pacemaker.advance_round_tc(timeout_msg.last_round_tc)
             tc = self.pacemaker.process_remote_timeout(timeout_msg)
-            print("HI3")
             if tc is not None:
                 self.pacemaker.advance_round_tc(tc)
                 process_new_round_event(tc)

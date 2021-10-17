@@ -124,18 +124,21 @@ class Ledger:
         #     file.close()
 
         # Pruning the SpeculateTree
+        if block_id not in self.id_to_block:
+            print("----------------------------------------------------------")
+            return
         block = self.id_to_block[block_id]
         prev_block = block.qc
         if prev_block != None:
             prev_block = prev_block.vote_info.id
             if prev_block in self.speculate_tree:
-                self.speculate_tree[prev_block] = block_id
+                self.speculate_tree[prev_block] = [block_id]
                 del self.speculate_tree[prev_block]
 
-        for i in recently_commited:
-            if i == block_id:
-                continue
-            del self.speculate_tree[i]
+        # for i in self.recently_committed_block_ids:
+        #     if i == block_id:
+        #         continue
+        #     del self.speculate_tree[i]
                 
         # if len(recently_commited) > 0:
         #     file = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'a+')
