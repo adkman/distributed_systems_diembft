@@ -79,7 +79,10 @@ class Safety:
 
     def make_timeout(self, round, high_qc, last_tc):
         Logging.log('Safety: make_timeout', round, high_qc, last_tc)
-        qc_round = high_qc.vote_info.round
+        if high_qc is None:
+            qc_round = 0
+        else:
+            qc_round = high_qc.vote_info.round
         # TODO implement valid_signatures and params for tmo_info
         if (Cryptography.valid_signatures([high_qc, last_tc])) and (self.__safe_to_timeout(round, qc_round, last_tc)):
             tmo_info =  TimeoutInfo(

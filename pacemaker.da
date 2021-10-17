@@ -1,10 +1,11 @@
-from object_types import TC
+from object_types import TC, TimeoutMsg
 from logger_util import Logging
-
+import threading
+from block_tree import BlockTree
 
 class Pacemaker:
 
-    def __init__(self, validator_id, replicas, blocktree, safety, nfaulty, delta):
+    def __init__(self, validator_id, replicas, blocktree, safety, nfaulty, delta, send_timeout_msg):
         self.current_round = 1  # Initially zero
         self.last_round_tc = None  # Initially None
         self.pending_timeouts = dict()  # Timeouts per rounda
@@ -14,6 +15,9 @@ class Pacemaker:
         self.validator_id = validator_id
         self.blocktree = blocktree
         self.safety = safety
+        self.timer = None
+        self.replicas = replicas
+        self.send_timeout_msg = send_timeout_msg
 
     def get_round_timer(self, r):
         Logging.log('Pacemaker: get_round_timer', r)
@@ -22,18 +26,16 @@ class Pacemaker:
 
     def stop_timer(self, round):
         Logging.log('Pacemaker: stop_timer', round)
-        pass
-        # TODO: Figure this out along with start_timer()
+        if self.timer is not None:
+            self.timer.cancel()
 
     # TODO: Read "Questions regarding MemPool Implementation" on Blackboard Discussion
     def start_timer(self, new_round):
         Logging.log('Pacemaker: start_timer', new_round)
         self.stop_timer(self.current_round)
         self.current_round = new_round
-        # TODO: Need to implement timer functionality
-        # start_local_timer for round current round for duration get_round_timer(current_round)
-    # Do we have to create a handler that continues checks if that particular rounds duration is exceded or not
-    # Do we have to implement our own method for stop_timer(round)
+        self.timer = threading.Timer(self.get_round_timer(new_round), self.local_timeout_round)
+        self.timer.start()
 
     def local_timeout_round(self):
         Logging.log('Pacemaker: local_timeout_round', [])
@@ -41,9 +43,9 @@ class Pacemaker:
             self.current_round, self.blocktree.high_qc, self.last_round_tc)
         # TODO: How to broadcast? Need to make PaceMaker as a process???
         # TODO: private_key, replicas is not there with Pacemaker, MERGE with validator
-        # timeout_msg = TimeoutMsg(timeout_info, self.last_round_tc, self.blockTree.high_commit_qc)
-        # signed_timeout_msg = Cryptography.sign_message(timeout_msg)
-        # send(('TimeoutMsg', signed_timeout_msg), to=self.replicas)
+
+        timeout_msg = TimeoutMsg(timeout_info, self.last_round_tc, self.blocktree.high_commit_qc)
+        self.send_timeout_msg(timeout_msg)
 
 
     def process_remote_timeout(self, tmo):

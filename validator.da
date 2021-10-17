@@ -24,7 +24,7 @@ class Validator (process):
         self.safety = Safety(validator_id, replicas,
                              self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
-            validator_id, replicas, self.blocktree, self.safety, config['nfaulty'], config['delta'])
+            validator_id, replicas, self.blocktree, self.safety, config['nfaulty'], config['delta'], send_timeout_msg)
         self.mempool = MemPool(validator_id)
         self.leader_election = LeaderElection(
             validator_id, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
@@ -42,9 +42,16 @@ class Validator (process):
         fp = open(Logging.filename, 'w')
         fp.close()
 
+    def send_timeout_msg(timeout_msg):
+        print("SENDSEND")
+        Logging.log('Validator: send_timeout_message', timeout_msg)
+        send(('TimeoutMsg', timeout_msg), to=self.replicas)
+
     def run():
+        self.pacemaker.start_timer(1)
         Logging.log(replicas[validator_id])
         await(received(('Done',), from_=parent()))
+        self.pacemaker.stop_timer(self.pacemaker.current_round)
         output("Validator", self.validator_id, "is exiting")
 
     def send_response(response, client):
@@ -171,6 +178,7 @@ class Validator (process):
         Logging.log("Received VoteMsg ends g", None)
 
     def receive(msg=('TimeoutMsg', timeout_msg), from_=p):
+        output("TIMEOUT")
         Logging.log_event("Received", "TimeoutMsg", timeout_msg, p)
         signature_verified = Cryptography.get_verified_message(timeout_msg.signature, public_keys_validators[p])
         Logging.log_event("Verified", "TimeoutMsg", signature_verified, p)
