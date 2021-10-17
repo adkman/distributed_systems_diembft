@@ -140,16 +140,15 @@ class Ledger:
             print("----------------------------------------------------------")
             return
         block = self.id_to_block[block_id]
-        prev_block = block.qc
-        if prev_block != None:
-            prev_block = prev_block.vote_info.id
-            if prev_block in self.speculate_tree:
-                for i in self.speculate_tree[prev_block]:
-                    if i != block_id:
-                        if i in self.speculate_tree:
-                            del self.speculate_tree[i]
-                self.speculate_tree[prev_block] = [block_id]
-                del self.speculate_tree[prev_block]
+        prev_block_qc = block.qc
+        if prev_block_qc != None:
+            prev_block_id = prev_block_qc.vote_info.id
+            if prev_block_id in self.speculate_tree:
+                for i in self.speculate_tree[prev_block_id]:
+                    if i != block_id and i in self.speculate_tree:
+                        del self.speculate_tree[i]
+                # self.speculate_tree[prev_block_id] = [block_id]
+                del self.speculate_tree[prev_block_id]
                 # self.speculate_tree[prev_block] = [block_id]
                 # del self.speculate_tree[prev_block]
 
@@ -160,9 +159,9 @@ class Ledger:
                 for j in self.speculate_tree[i]:
                     if j in self.speculate_tree and j != block_id:
                         del self.speculate_tree[j]
-                if i in self.speculate_tree:
-                    del self.speculate_tree[i]
-
+                # if i in self.speculate_tree:
+                del self.speculate_tree[i]
+                
         # if len(recently_commited) > 0:
         #     file = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'a+')
         #     file.write(str(self.speculate_tree)+'\n')
