@@ -3,6 +3,7 @@ from logger_util import Logging
 import threading
 from block_tree import BlockTree
 
+
 class Pacemaker:
 
     def __init__(self, validator_id, replicas, blocktree, safety, nfaulty, delta, send_timeout_msg):
@@ -35,7 +36,8 @@ class Pacemaker:
         Logging.log('Pacemaker: start_timer', new_round)
         self.stop_timer(self.current_round)
         self.current_round = new_round
-        self.timer = threading.Timer(self.get_round_timer(new_round), self.local_timeout_round)
+        self.timer = threading.Timer(self.get_round_timer(
+            new_round), self.local_timeout_round)
         self.timer.start()
 
     def local_timeout_round(self):
@@ -45,9 +47,11 @@ class Pacemaker:
         # TODO: How to broadcast? Need to make PaceMaker as a process???
         # TODO: private_key, replicas is not there with Pacemaker, MERGE with validator
 
-        timeout_msg = TimeoutMsg(timeout_info, self.last_round_tc, self.blocktree.high_commit_qc)
+        timeout_msg = TimeoutMsg(
+            timeout_info, self.last_round_tc, self.blocktree.high_commit_qc)
+        Logging.log("Timeout Msg parameters", timeout_info,
+                    self.last_round_tc, self.blocktree.high_commit_qc)
         self.send_timeout_msg(timeout_msg)
-
 
     def process_remote_timeout(self, tmo):
         Logging.log('Pacemaker: process_remote_timeout', tmo)
@@ -72,9 +76,20 @@ class Pacemaker:
             self.local_timeout_round()  # Bracha timeout
         # if len(self.pending_timeouts[tmo_info.round].senders) == 2*self.f + 1:
         if len(self.tmo_senders[tmo_info.round]) == 2*self.f + 1:
-            tmo_high_qc_rounds = set([t.high_qc.round for t in self.pending_timeouts[tmo_info.round]])
-            signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
-            tc = TC(tmo_info.round, tmo_high_qc_rounds, signatures, validator_id)
+            # print("Entering here")
+            # tmo_high_qc_rounds = set([t.high_qc.round for t in self.pending_timeouts[tmo_info.round]])
+            tmo_high_qc_rounds = set()
+            for t in self.pending_timeouts[tmo_info.round]:
+                if t.high_qc != None:
+                    tmo_high_qc_rounds.add(t.high_qc.vote_info.round)
+
+            # signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
+            signatures = set()
+            for t in self.pending_timeouts[tmo_info.round]:
+                signatures.add(t.author)
+
+            tc = TC(tmo_info.round, tmo_high_qc_rounds,
+                    signatures, self.validator_id)
             Logging.log('Pacemaker: process_remote_timeout: returns', tc)
             print("Exited with TC")
             return tc
