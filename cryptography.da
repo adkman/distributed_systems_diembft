@@ -2,7 +2,7 @@ import nacl.signing
 import nacl.encoding
 import pickle
 import nacl.hash
-from object_types import TimeoutMsg
+
 
 class Cryptography:
     def hash(*data):
@@ -35,7 +35,8 @@ class Cryptography:
             if message is None:
                 is_signature_valid = True
             else:
-                if type(message) is TimeoutMsg:
+                print(hasattr(message, 'tmo_info'))
+                if hasattr(message, 'tmo_info'):
                     is_signature_valid = Cryptography.valid_signature(message.tmo_info)
                 else:
                     is_signature_valid = Cryptography.valid_signature(message)
