@@ -82,14 +82,14 @@ class TimeoutInfo:
     def __init__(self, round=None, high_qc=None, validator=None):
         self.round = round
         self.high_qc = high_qc
-        self.sender = validator  # Added automatically when constructed
+        self.author = validator  # Added automatically when constructed
         # Signed automatically when constructed
         # self.signature = round + self.high_qc.round
         if high_qc is None:
             high_qc_round = None
         else:
-            high_qc_round = high_qc.round
-        self.signature = Cryptography.sign_message(
+            high_qc_round = high_qc.vote_info.round
+        self.author_signature = Cryptography.sign_message(
             str(round)+","+str(high_qc_round))
 
 

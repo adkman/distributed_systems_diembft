@@ -28,7 +28,7 @@ class Validator (process):
         self.safety = Safety(validator_id, replicas,
                              self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
-            validator_id, replicas, self.blocktree, self.safety, config['nfaulty'], config['delta'])
+            validator_id, replicas, self.blocktree, self.safety, config['nfaulty'], config['delta'], send_timeout_msg)
         self.mempool = MemPool(validator_id)
         self.leader_election = LeaderElection(
             validator_id, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
@@ -46,6 +46,8 @@ class Validator (process):
         fp = open(Logging.filename, 'w')
         fp.close()
 
+
+<< << << < HEAD
         if config['failure_config'].seed is None:
             config['failure_config'].seed = random.randint(10000, 100000)
             Logging.log("Generated a seed for failure config",
@@ -61,10 +63,18 @@ class Validator (process):
             # TODO set this? last_vote_round = value
         else:
             output('error: Validator.setattr: unsupported attribute')
+=======
+    def send_timeout_msg(timeout_msg):
+        print("SENDSEND")
+        Logging.log('Validator: send_timeout_message', timeout_msg)
+        send(('TimeoutMsg', timeout_msg), to=self.replicas)
+>>>>>>> a5e9b1baa66b1b04b2832c3f26909a1d3cadec40
 
     def run():
+        self.pacemaker.start_timer(1)
         Logging.log(replicas[validator_id])
         await(received(('Done',), from_=parent()))
+        self.pacemaker.stop_timer(self.pacemaker.current_round)
         output("Validator", self.validator_id, "is exiting")
 
     def send_response(response, client):
@@ -203,10 +213,12 @@ class Validator (process):
             process_certificate_qc(timeout_msg.high_commit_qc)
             self.pacemaker.advance_round_tc(timeout_msg.last_round_tc)
             tc = self.pacemaker.process_remote_timeout(timeout_msg)
+            print("HI3")
             if tc is not None:
                 self.pacemaker.advance_round_tc(tc)
                 process_new_round_event(tc)
         else:
+            print("Not verified")
             # TODO: Add mechanism to handle this
             output(p, "'s TimeoutMsg signature could not be verified")
 
