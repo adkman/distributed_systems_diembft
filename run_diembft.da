@@ -1,12 +1,9 @@
 import os
 
 from client import Client
+from config import configs
 from cryptography import Cryptography
-from logger_util import Logging
-from object_types import FailType, Failure, FailureConfig, MsgType
-from validator import Validator, ValidatorFI
-
-# from validator_fi import ValidatorFI
+from validator import ValidatorFI
 
 
 class RunDiemBFT(process):
@@ -70,28 +67,6 @@ def is_config_valid(config):
 
 
 def main():
-    configs = [{
-        'nvalidators': 5,
-        'nfaulty': 1,
-        'nclients': 5,
-        'nclientops': 5,
-        'sleeptime': 1,
-        'clienttimeout': 10,
-        'delta': 5,
-        'window_size': 5,
-        'exclude_size': 1,
-        'failure_config': FailureConfig(
-            failures=[
-                # Failure(src=2, dest='leader', msg_type=MsgType.Vote,
-                #         round=1, prob=1, fail_type=FailType.Delay, val=0.1, attr=None),
-                Failure(src='_', dest='leader', msg_type=MsgType.Vote,
-                        round=3, prob=1, fail_type=FailType.MsgLoss, val=None, attr=None),
-                # Failure(src='leader', dest='_', msg_type=MsgType.Vote, round=3,
-                #         prob=0.5, fail_type=FailType.SetAttr, val=2, attr='highest_vote_round')
-            ],
-            seed=12345678
-        )
-    }]
     config_id = 0
     for config in configs:
         if not is_config_valid(config):

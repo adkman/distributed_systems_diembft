@@ -1,10 +1,12 @@
 from os import spawnle
+
 from cryptography import Cryptography
 from logger_util import Logging
 
+
 class Ledger:
 
-    def __init__(self, config_id, validator_id, id_block, recently_committed_block_ids):
+    def __init__(self, config_id, validator_id, id_block, recently_committed_block_ids, request_cache):
         self.validator_id = validator_id
         self.config_id = config_id
         self.state_id = 0
@@ -14,12 +16,14 @@ class Ledger:
         self.commited = dict()
         self.genesis = "Genesis"
         self.id_to_block = id_block
+        self.request_cache = request_cache
         self.filename = "validator_" + str(validator_id) + ".ledger"
-        fp = open('./ledgers/config' + str(config_id) + "/" + self.filename, 'w')
+        fp = open('./ledgers/config' + str(config_id) +
+                  "/" + self.filename, 'w')
         fp.close()
 
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
-        Logging.log('Ledger: get_state_id', prev_block_id,block_id,txns)
+        Logging.log('Ledger: get_state_id', prev_block_id, block_id, txns)
         if prev_block_id == None:
             new_state_id = Cryptography.hash(txns)
             Logging.log('Ledger: get_state_id: returns', new_state_id)
@@ -107,15 +111,22 @@ class Ledger:
         #         file.write("No parent")
         #     file.close()
 
-        fp = open('./ledgers/config' + str(self.config_id) + "/" + self.filename, 'a+')
+        fp = open('./ledgers/config' + str(self.config_id) +
+                  "/" + self.filename, 'a+')
         while(stack):
             block_id, payload = stack.pop()
             self.commited[block_id] = payload
             for txn in payload:
-                Logging.log('Ledger: commit committing a txn', txn)
-                fp.write(txn['command']+'\n')
+                if txn['req_id'] in self.request_cache:
+                    Logging.log(
+                        'Ledger: commit skipping txn as already committed', txn)
+                    continue
+                else:
+                    Logging.log('Ledger: commit committing a txn', txn)
+                    fp.write(txn['command']+'\n')
             self.recently_committed_block_ids.append(block_id)
-            Logging.log('Ledger: commit recent_committed_blocks', self.recently_committed_block_ids)
+            Logging.log('Ledger: commit recent_committed_blocks',
+                        self.recently_committed_block_ids)
         fp.close()
 
         Logging.log('Ledger: commit: ends', None)
@@ -151,13 +162,11 @@ class Ledger:
                         del self.speculate_tree[j]
                 if i in self.speculate_tree:
                     del self.speculate_tree[i]
-                
+
         # if len(recently_commited) > 0:
         #     file = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'a+')
         #     file.write(str(self.speculate_tree)+'\n')
         #     file.close()
-
-
 
     def committed_block(self, block_id):
         Logging.log('Ledger: committed_block', block_id)
@@ -170,7 +179,7 @@ class Ledger:
 
 
 def main():
-    l = Ledger(1,2,3)
+    l = Ledger(1, 2, 3)
     # l.speculate(10, 11, "1st")
     # l.speculate(10, 12, "2nd")
     # l.speculate(11, 13, "3nd")

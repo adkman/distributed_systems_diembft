@@ -1,9 +1,7 @@
-import time
 import threading
 
 from cryptography import Cryptography
 from logger_util import Logging
-from object_types import MsgType
 
 
 class Client(process):
