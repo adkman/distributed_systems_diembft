@@ -46,12 +46,12 @@ class Pacemaker:
             self.current_round, self.blocktree.high_qc, self.last_round_tc)
         # TODO: How to broadcast? Need to make PaceMaker as a process???
         # TODO: private_key, replicas is not there with Pacemaker, MERGE with validator
-
-        timeout_msg = TimeoutMsg(
-            timeout_info, self.last_round_tc, self.blocktree.high_commit_qc)
-        Logging.log("Timeout Msg parameters", timeout_info,
-                    self.last_round_tc, self.blocktree.high_commit_qc)
-        self.send_timeout_msg(timeout_msg)
+        if timeout_info is not None:
+            timeout_msg = TimeoutMsg(
+                timeout_info, self.last_round_tc, self.blocktree.high_commit_qc)
+            Logging.log("Timeout Msg parameters", timeout_info,
+                        self.last_round_tc, self.blocktree.high_commit_qc)
+            self.send_timeout_msg(timeout_msg)
 
     def process_remote_timeout(self, tmo):
         Logging.log('Pacemaker: process_remote_timeout', tmo)

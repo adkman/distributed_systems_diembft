@@ -1,3 +1,4 @@
+from os import spawnle
 from cryptography import Cryptography
 from logger_util import Logging
 
@@ -133,16 +134,23 @@ class Ledger:
             prev_block = prev_block.vote_info.id
             if prev_block in self.speculate_tree:
                 for i in self.speculate_tree[prev_block]:
-                    if i != block:
-                        del self.speculate_tree[i]
-                self.speculate_tree[prev_block] = [block]
+                    if i != block_id:
+                        if i in self.speculate_tree:
+                            del self.speculate_tree[i]
+                self.speculate_tree[prev_block] = [block_id]
+                del self.speculate_tree[prev_block]
                 # self.speculate_tree[prev_block] = [block_id]
                 # del self.speculate_tree[prev_block]
 
-        # for i in self.recently_committed_block_ids:
-        #     if i == block_id:
-        #         continue
-        #     del self.speculate_tree[i]
+        for i in self.recently_committed_block_ids:
+            if i == block_id:
+                continue
+            if i in self.speculate_tree:
+                for j in self.speculate_tree[i]:
+                    if j in self.speculate_tree and j != block_id:
+                        del self.speculate_tree[j]
+                if i in self.speculate_tree:
+                    del self.speculate_tree[i]
                 
         # if len(recently_commited) > 0:
         #     file = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'a+')
