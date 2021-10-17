@@ -43,7 +43,7 @@ class Pacemaker:
         # TODO: private_key, replicas is not there with Pacemaker, MERGE with validator
         # timeout_msg = TimeoutMsg(timeout_info, self.last_round_tc, self.blockTree.high_commit_qc)
         # signed_timeout_msg = Cryptography.sign_message(timeout_msg)
-        # send(('TimeoutMsg', signed_timeout_msg), to=self.replicas)
+        # send(('Timeout', signed_timeout_msg), to=self.replicas)
 
 
     def process_remote_timeout(self, tmo):

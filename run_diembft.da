@@ -1,9 +1,11 @@
+import os
+
 from client import Client
 from cryptography import Cryptography
 from logger_util import Logging
-from validator import Validator
-
-import os
+from object_types import FailType, Failure, FailureConfig, MsgType
+from validator import Validator, ValidatorFI
+# from validator_fi import ValidatorFI
 
 
 class RunDiemBFT(process):
@@ -11,6 +13,7 @@ class RunDiemBFT(process):
     def setup(config):
         self.nvalidators = int(config['nvalidators'])
         self.nclients = int(config['nclients'])
+        self.nfaulty = int(config['nfaulty'])
 
     def run():
 
@@ -24,7 +27,10 @@ class RunDiemBFT(process):
         if not os.path.exists('./ledgers'):
             os.makedirs('./ledgers')
 
-        validators = new(Validator, num=nvalidators)
+        nloyalvalidators = nvalidators - nfaulty
+        loyal_validators = new(Validator, num=nloyalvalidators)
+        faulty_validators = new(ValidatorFI, num=nfaulty)
+        validators = loyal_validators.union(faulty_validators)
         clients = new(Client, num=nclients)
 
         for v in validators:
@@ -42,13 +48,8 @@ class RunDiemBFT(process):
                         private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for i, c in enumerate(clients):
-            setup({c}, (config, i, validators,
+            setup({c}, (config, i, list(validators),
                         private_keys_clients[c], public_keys_validators))
-
-        # output("keys", private_keys_validators)
-        # output("keys", public_keys_validators)
-        # output("keys", private_keys_clients)
-        # output("keys", public_keys_clients)
 
         start(validators)
         start(clients)
@@ -80,7 +81,18 @@ def main():
         'clienttimeout': 10,
         'delta': 5,
         'window_size': 5,
-        'exclude_size': 1
+        'exclude_size': 1,
+        'failure_config': FailureConfig(
+            failures=[
+                Failure(src='_', dest='leader', msg_type=MsgType.Vote,
+                        round=1, prob=1, fail_type=FailType.Delay, val=0.1, attr=None),
+                Failure(src='_', dest='_', msg_type=MsgType.Vote,
+                        round=3, prob=1, fail_type=FailType.MsgLoss, val=None, attr=None),
+                Failure(src='leader', dest='_', msg_type=MsgType.Vote, round=3,
+                        prob=0.5, fail_type=FailType.SetAttr, val=2, attr='last_vote_round')
+            ],
+            seed=12345678
+        )
     }]
     for config in configs:
         if not is_config_valid(config):

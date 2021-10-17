@@ -1,4 +1,33 @@
+from collections import namedtuple
+from enum import Enum
+
 from cryptography import Cryptography
+
+
+class MsgType(Enum):
+    Proposal = 1
+    QC = 2
+    Timeout = 3
+    Vote = 4
+    Response = 5
+    Request = 6
+    Done = 7
+    Wildcard = 8   # matches all message types
+
+
+class FailType(Enum):
+    MsgLoss = 1
+    Delay = 2
+    SetAttr = 3
+
+
+Failure = namedtuple('Failure', ['src', 'dest', 'msg_type', 'round',
+                                 'prob', 'fail_type', 'val', 'attr'])
+
+FailureConfig = namedtuple(
+    'FailureConfig', ['failures', 'seed'])
+
+
 class VoteInfo:
     def __init__(self, id=None, round=None, parent_id=None, parent_round=None, exec_state_id=None):
         self.id = id
@@ -60,7 +89,8 @@ class TimeoutInfo:
             high_qc_round = None
         else:
             high_qc_round = high_qc.round
-        self.signature = Cryptography.sign_message(str(round)+","+str(high_qc_round))
+        self.signature = Cryptography.sign_message(
+            str(round)+","+str(high_qc_round))
 
 
 class TC:

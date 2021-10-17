@@ -2,6 +2,8 @@ import time
 
 from cryptography import Cryptography
 from logger_util import Logging
+from object_types import MsgType
+
 
 class Client(process):
 
@@ -15,12 +17,12 @@ class Client(process):
 
         Cryptography.private_key = self.private_key
 
-        Logging.replicas = list(validators)
+        Logging.replicas = validators
         Logging.process_type = "client"
         Logging.process_id = client_id
         Logging.filename = './logs/' + Logging.process_type + \
             "_" + str(Logging.process_id) + ".log"
-        fp = open(Logging.filename,'w')
+        fp = open(Logging.filename, 'w')
         fp.close()
 
     def run():
@@ -33,7 +35,7 @@ class Client(process):
                 'command': str(client_id) + "-" + str(i)
             }
             signed_req = Cryptography.sign_message(req)
-            send(('request', signed_req), to=validators)
+            send(('Request', signed_req), to=validators)
             Logging.log_event("Sent", "request", req, validators)
             # await(request_id in received_sufficient_responses)
             # output('Got final response for request', req)
@@ -41,7 +43,7 @@ class Client(process):
         await(len(received_sufficient_responses) == nops)
         send(('Done',), to=parent())
 
-    def receive(msg=('response', resp), from_=validator):
+    def receive(msg=('Response', resp), from_=validator):
         Logging.log_event("Received", "response", resp, validator)
         req_id = resp['req_id']
         resp_status = resp['resp_status']
@@ -49,9 +51,11 @@ class Client(process):
             pending_success_results[req_id].append(resp)
             if len(pending_success_results[req_id]) == self.f + 1:
                 received_sufficient_responses.add(req_id)
-                Logging.log("Received sufficient success replies from validators", req_id)
+                Logging.log(
+                    "Received sufficient success replies from validators", req_id)
         else:
             pending_fail_results[req_id].append(resp)
             if len(pending_fail_results[req_id]) == self.f + 1:
                 received_sufficient_responses.add(req_id)
-                Logging.log("Received sufficient failure replies from validators", req_id)
+                Logging.log(
+                    "Received sufficient failure replies from validators", req_id)
