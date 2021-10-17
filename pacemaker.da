@@ -82,6 +82,8 @@ class Pacemaker:
             for t in self.pending_timeouts[tmo_info.round]:
                 if t.high_qc != None:
                     tmo_high_qc_rounds.add(t.high_qc.vote_info.round)
+                else:
+                    tmo_high_qc_rounds.add(0)
 
             # signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
             signatures = set()
