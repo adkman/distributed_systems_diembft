@@ -24,11 +24,15 @@ class BlockTree:
         if block.qc is None:
             self.ledger.speculate(None, block.id, [
                 txn['command'] for txn in block.payload])
+
             self.pending_block_tree[block] = []
         else:
             self.ledger.speculate(block.qc.vote_info.id, block.id, [
                 txn['command'] for txn in block.payload])
-            self.pending_block_tree[self.id_block[block.qc.vote_info.id]] = block
+
+            self.pending_block_tree[self.id_block[block.qc.vote_info.id]].append(
+                block)
+            self.pending_block_tree[block] = []
         # self.pending_block_tree.add(block) TODO
         Logging.log('BlockTree: execute_and_insert ends', block)
 
@@ -69,7 +73,7 @@ class BlockTree:
                 ledger_commit_info=vote_msg.ledger_commit_info,
                 signatures=self.pending_votes[vote_idx],
                 author=self.validator_id,
-                signers = self.pending_signers[vote_idx]
+                signers=self.pending_signers[vote_idx]
             )
             Logging.log('BlockTree: process_vote: returns', qc)
             return qc
@@ -86,7 +90,7 @@ class BlockTree:
             prev_block_qc = current_block.qc
             if prev_block_qc != None:
                 prev_block = self.id_block[current_block.qc.vote_info.id]
-                if prev_block in  self.pending_block_tree:
+                if prev_block in self.pending_block_tree:
                     self.pending_block_tree[prev_block] = current_block
                     while(prev_block in self.pending_block_tree):
                         del self.pending_block_tree[prev_block]
@@ -95,7 +99,7 @@ class BlockTree:
                         if prev_block_qc == None:
                             break
                         prev_block = self.id_block[current_block.qc.vote_info.id]
-                    # now change the current and prevblock 
+                    # now change the current and prevblock
 
             self.high_commit_qc = get_qc_with_max_round(
                 qc, self.high_commit_qc)
