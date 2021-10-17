@@ -255,7 +255,9 @@ class ValidatorFI (process, Validator):
                 continue
 
             if failure_config.dest == "leader":
-                if self.leader_election.get_leader(self.pacemaker.current_round) != to:
+                if failure_config.msg_type == MsgType.Vote and self.leader_election.get_leader(self.pacemaker.current_round + 1) != to:
+                    continue
+                if failure_config.msg_type != MsgType.Vote and self.leader_election.get_leader(self.pacemaker.current_round) != to:
                     continue
             elif failure_config.dest != "_" and self.replicas[failure_config.dest] != to:
                 continue
