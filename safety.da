@@ -83,7 +83,7 @@ class Safety:
         else:
             qc_round = block.qc.vote_info.round
             qc_block_id = block.qc.vote_info.id
-        if Cryptography.valid_signatures([block, last_tc]) and self.safe_to_vote(block.round, qc_round, last_tc):
+        if Cryptography.valid_signatures(last_tc) and Cryptography.valid_signatures(block) and self.safe_to_vote(block.round, qc_round, last_tc):
             self.update_highest_qc_round(qc_round)
             self.increase_highest_vote_round(block.round)
             vote_info = VoteInfo(
@@ -115,7 +115,7 @@ class Safety:
         else:
             qc_round = high_qc.vote_info.round
         # TODO implement valid_signatures and params for tmo_info
-        if (Cryptography.valid_signatures([high_qc, last_tc])) and (self.safe_to_timeout(round, qc_round, last_tc)):
+        if Cryptography.valid_signatures(high_qc) and Cryptography.valid_signatures(last_tc) and self.safe_to_timeout(round, qc_round, last_tc):
             tmo_info =  TimeoutInfo(
                 round,
                 high_qc,

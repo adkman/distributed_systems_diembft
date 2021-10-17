@@ -29,20 +29,30 @@ class Cryptography:
         except:
             return None
 
-    def valid_signatures(messages):
+    def valid_signatures(message):
+        if message is None:
+            return True
         all_signatures_valid = True
-        for message in messages:
-            if message is None:
-                is_signature_valid = True
-            else:
-                if hasattr(message, 'tmo_info'):
-                    is_signature_valid = Cryptography.valid_signature(message.tmo_info)
-                else:
-                    is_signature_valid = Cryptography.valid_signature(message)
-            all_signatures_valid = all_signatures_valid and is_signature_valid
-        return all_signatures_valid
 
-    #Message Type is Block, QC, TC
-    def valid_signature(message):
-        signature = Cryptography.get_verified_message(message.author_signature, Cryptography.public_keys_validators[Cryptography.replicas[message.author]])
+        if hasattr(message, 'tmo_signatures'):
+            signatures = message.tmo_signatures
+            signers = message.tmo_signers
+            for i in range(len(signatures)):
+                is_signature_valid = Cryptography.valid_signature_with_signer(signatures[i], signers[i])
+                all_signatures_valid = all_signatures_valid and is_signature_valid
+            return all_signatures_valid
+
+        elif hasattr(message, 'ledger_commit_info'):
+            signatures = message.signatures
+            signers = message.signers
+            for i in range(len(signatures)):
+                is_signature_valid = Cryptography.valid_signature_with_signer(signatures[i], signers[i])
+                all_signatures_valid = all_signatures_valid and is_signature_valid
+            return all_signatures_valid
+
+        else:
+            return Cryptography.valid_signature_with_signer(message.author_signature, message.author)
+
+    def valid_signature_with_signer(message, signer):
+        signature = Cryptography.get_verified_message(message, Cryptography.public_keys_validators[Cryptography.replicas[signer]])
         return signature is not None

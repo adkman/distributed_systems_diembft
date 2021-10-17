@@ -2,6 +2,8 @@ __pycache__
 **.py
 **.ledger
 logs/**
+ledgers/**
+.DS_Store
 test**
 **.log
 pseudo

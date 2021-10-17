@@ -20,6 +20,8 @@ class Pacemaker:
         self.replicas = replicas
         self.send_timeout_msg = send_timeout_msg
         self.tmo_senders = dict()
+        self.tmo_signatures = dict()
+        self.tmo_senders = dict()
 
     def get_round_timer(self, r):
         Logging.log('Pacemaker: get_round_timer', r)
@@ -61,15 +63,15 @@ class Pacemaker:
             Logging.log('Pacemaker: process_remote_timeout: returns', None)
             return None
         if tmo_info.round not in self.pending_timeouts:
-            self.pending_timeouts[tmo_info.round] = set()
-            self.tmo_senders[tmo_info.round] = set()
+            self.pending_timeouts[tmo_info.round] = []
+            self.tmo_senders[tmo_info.round] = []
+            self.tmo_signatures[tmo_info.round] = []
         # if tmo_info.author not in self.pending_timeouts[tmo_info.round].senders:
         if tmo_info.author not in self.tmo_senders[tmo_info.round]:
-            self.tmo_senders[tmo_info.round].add(tmo_info.author)
+            self.pending_timeouts[tmo_info.round].append(tmo_info)
+            self.tmo_senders[tmo_info.round].append(tmo_info.author)
+            self.tmo_signatures[tmo_info.round].append(tmo_info.author_signature)
 
-            # TODO: In pending_timeouts dictionary, for given key round number what is the corresponding value?
-            self.pending_timeouts[tmo_info.round].add(
-                tmo_info)
         # if len(self.pending_timeouts[tmo_info.round].senders) == self.f + 1:
         if len(self.tmo_senders[tmo_info.round]) == self.f + 1:
             self.stop_timer(self.current_round)
@@ -78,20 +80,19 @@ class Pacemaker:
         if len(self.tmo_senders[tmo_info.round]) == 2*self.f + 1:
             # print("Entering here")
             # tmo_high_qc_rounds = set([t.high_qc.round for t in self.pending_timeouts[tmo_info.round]])
-            tmo_high_qc_rounds = set()
+            tmo_high_qc_rounds = []
             for t in self.pending_timeouts[tmo_info.round]:
                 if t.high_qc != None:
-                    tmo_high_qc_rounds.add(t.high_qc.vote_info.round)
+                    tmo_high_qc_rounds.append(t.high_qc.vote_info.round)
                 else:
-                    tmo_high_qc_rounds.add(0)
+                    tmo_high_qc_rounds.append(0)
 
-            # signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
-            signatures = set()
-            for t in self.pending_timeouts[tmo_info.round]:
-                signatures.add(t.author)
+            # # signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
+            # for t in self.pending_timeouts[tmo_info.round]:
+            #     signatures.append(t.author_signature)
 
             tc = TC(tmo_info.round, tmo_high_qc_rounds,
-                    signatures, self.validator_id)
+                    self.tmo_signatures[tmo_info.round], self.tmo_senders[tmo_info.round], self.validator_id)
             Logging.log('Pacemaker: process_remote_timeout: returns', tc)
             return tc
         Logging.log('Pacemaker: process_remote_timeout: returns', None)
