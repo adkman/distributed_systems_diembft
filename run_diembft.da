@@ -31,7 +31,7 @@ class RunDiemBFT(process):
         nloyalvalidators = nvalidators - nfaulty
         loyal_validators = new(Validator, num=nloyalvalidators)
         faulty_validators = new(ValidatorFI, num=nfaulty)
-        validators = loyal_validators.union(faulty_validators)
+        validators = list(loyal_validators) + list(faulty_validators)
         clients = new(Client, num=nclients)
 
         for v in validators:
@@ -45,11 +45,11 @@ class RunDiemBFT(process):
             public_keys_clients[c] = public_key
 
         for i, v in enumerate(validators):
-            setup({v}, (config, i, list(validators), list(clients),
+            setup({v}, (config, i, validators, list(clients),
                         private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for i, c in enumerate(clients):
-            setup({c}, (config, i, list(validators),
+            setup({c}, (config, i, validators,
                         private_keys_clients[c], public_keys_validators))
 
         start(validators)
