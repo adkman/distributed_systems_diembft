@@ -45,6 +45,7 @@ class LeaderElection:
 
     def elect_reputation_leader(self, qc):
         Logging.log('LeaderElection: elect_reputation_leader', qc)
+        
         active_validators = set()
         last_authors = set()
         current_qc = qc
@@ -52,21 +53,23 @@ class LeaderElection:
         while(i < self.window_size or len(last_authors) < self.exclude_size):
             if current_qc is None:
                 break
+            if i < self.window_size:
+                active_validators = active_validators.union(
+                    current_qc.signers)
             current_block = self.ledger.committed_block(
                 current_qc.vote_info.parent_id)
             if current_block is None:
                 break
             block_author = current_block.author
-            if i < self.window_size:
-                active_validators = active_validators.union(
-                    current_qc.signers)
             if len(last_authors) < self.exclude_size:
                 last_authors = last_authors.union({block_author})
             current_qc = current_block.qc
             i = i + 1
 
+
         active_validators = active_validators.difference(
             last_authors)
+
 
         random.seed(qc.vote_info.round)
         leader_indx = random.choice(list(active_validators))

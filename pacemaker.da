@@ -18,6 +18,7 @@ class Pacemaker:
         self.timer = None
         self.replicas = replicas
         self.send_timeout_msg = send_timeout_msg
+        self.tmo_senders = dict()
 
     def get_round_timer(self, r):
         Logging.log('Pacemaker: get_round_timer', r)
@@ -50,25 +51,35 @@ class Pacemaker:
 
     def process_remote_timeout(self, tmo):
         Logging.log('Pacemaker: process_remote_timeout', tmo)
+        # print("Content", tmo.tmo_info, tmo.tmo_info.__dict__)
         tmo_info = tmo.tmo_info
         if tmo_info.round < self.current_round:
             Logging.log('Pacemaker: process_remote_timeout: returns', None)
             return None
-        # TODO: "senders" is not defined anywhere, read and fix this
-        if tmo_info.sender not in self.pending_timeouts[tmo_info.round].senders:
+        if tmo_info.round not in self.pending_timeouts:
+            self.pending_timeouts[tmo_info.round] = set()
+            self.tmo_senders[tmo_info.round] = set()
+        # if tmo_info.author not in self.pending_timeouts[tmo_info.round].senders:
+        if tmo_info.author not in self.tmo_senders[tmo_info.round]:
+            self.tmo_senders[tmo_info.round].add(tmo_info.author)
+
             # TODO: In pending_timeouts dictionary, for given key round number what is the corresponding value?
-            self.pending_timeouts[tmo_info.round] = self.pending_timeouts[tmo_info.round].add(
+            self.pending_timeouts[tmo_info.round].add(
                 tmo_info)
-        if len(self.pending_timeouts[tmo_info.round].senders) == self.f + 1:
+        # if len(self.pending_timeouts[tmo_info.round].senders) == self.f + 1:
+        if len(self.tmo_senders[tmo_info.round]) == self.f + 1:
             self.stop_timer(self.current_round)
             self.local_timeout_round()  # Bracha timeout
-        if len(self.pending_timeouts[tmo_info.round].senders) == 2*self.f + 1:
+        # if len(self.pending_timeouts[tmo_info.round].senders) == 2*self.f + 1:
+        if len(self.tmo_senders[tmo_info.round]) == 2*self.f + 1:
             tmo_high_qc_rounds = set([t.high_qc.round for t in self.pending_timeouts[tmo_info.round]])
             signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
             tc = TC(tmo_info.round, tmo_high_qc_rounds, signatures, validator_id)
             Logging.log('Pacemaker: process_remote_timeout: returns', tc)
+            print("Exited with TC")
             return tc
         Logging.log('Pacemaker: process_remote_timeout: returns', None)
+        print("Exited without TC")
         return None
 
     def advance_round_tc(self, tc):

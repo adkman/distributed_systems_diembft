@@ -35,7 +35,6 @@ class Cryptography:
             if message is None:
                 is_signature_valid = True
             else:
-                print(hasattr(message, 'tmo_info'))
                 if hasattr(message, 'tmo_info'):
                     is_signature_valid = Cryptography.valid_signature(message.tmo_info)
                 else:
