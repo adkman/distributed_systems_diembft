@@ -3,10 +3,9 @@ from logger_util import Logging
 
 class Ledger:
 
-    def __init__(self, validator_id, id_block, recently_committed_block_ids):
+    def __init__(self, config_id, validator_id, id_block, recently_committed_block_ids):
         self.validator_id = validator_id
         self.state_id = 0
-        # self.state_id_to_block_id = dict()
         self.block_id_to_state_id = dict()
         self.recently_committed_block_ids = recently_committed_block_ids
         self.speculate_tree = dict()
@@ -14,16 +13,8 @@ class Ledger:
         self.genesis = "Genesis"
         self.id_to_block = id_block
         self.filename = "validator_" + str(validator_id) + ".ledger"
-        fp = open('./ledgers/' + self.filename, 'w')
+        fp = open('./ledgers/config' + str(config_id) + "/" + self.filename, 'w')
         fp.close()
-
-        
-        # fp = open('./ledgers/' + self.filename, 'w')
-        # fp.close()
-        # sp = open('./ledgers/' + 'SpecTree' + self.filename,'w')
-        # sp.close()
-        # ap = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'w')
-        # ap.close()
 
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
         Logging.log('Ledger: get_state_id', prev_block_id,block_id,txns)

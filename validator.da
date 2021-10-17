@@ -15,14 +15,14 @@ from safety import Safety
 
 class Validator (process):
 
-    def setup(config, validator_id, replicas: list, clients: list, private_key, public_keys_validators, public_keys_clients):
+    def setup(config, config_id: int, validator_id: int, replicas: list, clients: list, private_key, public_keys_validators, public_keys_clients):
         self.id_block = dict()
         self.request_cache = dict()
         self.recently_committed_block_ids = list()
         self.should_start_new_round = True
 
         self.ledger = Ledger(
-            validator_id, self.id_block, self.recently_committed_block_ids)
+            config_id, validator_id, self.id_block, self.recently_committed_block_ids)
         self.blocktree = BlockTree(
             validator_id, replicas, self.ledger, config['nfaulty'], self.id_block)
         self.safety = Safety(validator_id, replicas,
@@ -41,8 +41,8 @@ class Validator (process):
         Logging.process_type = "validator"
         Logging.process_id = validator_id
         Logging.clients = clients
-        Logging.filename = './logs/' + Logging.process_type + \
-            "_" + str(Logging.process_id) + ".log"
+        Logging.filename = './logs/config' + str(config_id) + '/' \
+            + Logging.process_type + "_" + str(Logging.process_id) + ".log"
         fp = open(Logging.filename, 'w')
         fp.close()
 
@@ -56,9 +56,8 @@ class Validator (process):
     def setattr(attr, value):
         if attr == 'current_round':
             self.pacemaker.current_round = value
-        elif attr == 'last_vote_round':
-            pass
-            # TODO set this? last_vote_round = value
+        elif attr == 'highest_vote_round':
+            self.safety.set_highest_vote_round(value)
         else:
             output('error: Validator.setattr: unsupported attribute')
 
@@ -202,7 +201,7 @@ class Validator (process):
     def receive(msg=('Timeout', timeout_msg), from_=p):
         Logging.log_event("Received", "TimeoutMsg", timeout_msg, p)
         signature_verified = Cryptography.get_verified_message(
-            timeout_msg.signature, public_keys_validators[p])
+            timeout_msg.tmo_info.author_signature, public_keys_validators[p])
         Logging.log_event("Verified", "TimeoutMsg", signature_verified, p)
         if signature_verified is not None:
             process_certificate_qc(timeout_msg.tmo_info.high_qc)
@@ -246,7 +245,9 @@ class ValidatorFI (process, Validator):
 
     def get_failure_config(message, to):
         for failure_config in self.config['failure_config'].failures:
-            Logging.log('ValidatorFI.get_failure_config', message[0], to, self.pacemaker.current_round)
+            # only allow SetAttr fail type to last nfaulty validators
+            if failure_config.fail_type == FailType.SetAttr and self.validator_id >= len(self.replicas) - config['nfaulty']:
+                continue
             if failure_config.src == "leader":
                 if self.leader_election.get_leader(self.pacemaker.current_round) != self.replicas[self.validator_id]:
                     continue

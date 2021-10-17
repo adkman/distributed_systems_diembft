@@ -7,7 +7,7 @@ from object_types import MsgType
 
 class Client(process):
 
-    def setup(config, client_id, validators: list, private_key, public_keys_validators):
+    def setup(config, config_id: int, client_id: int, validators: list, private_key, public_keys_validators):
         self.pending_success_results = dict()
         self.pending_fail_results = dict()
         self.received_sufficient_responses = set()
@@ -20,8 +20,9 @@ class Client(process):
         Logging.replicas = validators
         Logging.process_type = "client"
         Logging.process_id = client_id
-        Logging.filename = './logs/' + Logging.process_type + \
-            "_" + str(Logging.process_id) + ".log"
+        Logging.filename = './logs/config' + str(config_id) \
+            + '/' + Logging.process_type + "_" + \
+            str(Logging.process_id) + ".log"
         fp = open(Logging.filename, 'w')
         fp.close()
 
