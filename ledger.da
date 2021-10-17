@@ -5,6 +5,7 @@ class Ledger:
 
     def __init__(self, config_id, validator_id, id_block, recently_committed_block_ids):
         self.validator_id = validator_id
+        self.config_id = config_id
         self.state_id = 0
         self.block_id_to_state_id = dict()
         self.recently_committed_block_ids = recently_committed_block_ids
@@ -105,7 +106,7 @@ class Ledger:
         #         file.write("No parent")
         #     file.close()
 
-        fp = open('./ledgers/' + self.filename, 'a+')
+        fp = open('./ledgers/config' + str(self.config_id) + "/" + self.filename, 'a+')
         while(stack):
             block_id, payload = stack.pop()
             self.commited[block_id] = payload
