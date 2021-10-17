@@ -11,7 +11,7 @@ from validator import Validator, ValidatorFI
 
 class RunDiemBFT(process):
 
-    def setup(config):
+    def setup(config, config_id):
         self.nvalidators = int(config['nvalidators'])
         self.nclients = int(config['nclients'])
         self.nfaulty = int(config['nfaulty'])
@@ -23,15 +23,12 @@ class RunDiemBFT(process):
         private_keys_clients = {}
         public_keys_clients = {}
 
-        if not os.path.exists('./logs'):
-            os.makedirs('./logs')
-        if not os.path.exists('./ledgers'):
-            os.makedirs('./ledgers')
+        if not os.path.exists('./logs/config' + str(config_id)):
+            os.makedirs('./logs/config' + str(config_id))
+        if not os.path.exists('./ledgers/config' + str(config_id)):
+            os.makedirs('./ledgers/config' + str(config_id))
 
-        nloyalvalidators = nvalidators - nfaulty
-        loyal_validators = new(Validator, num=nloyalvalidators)
-        faulty_validators = new(ValidatorFI, num=nfaulty)
-        validators = list(loyal_validators) + list(faulty_validators)
+        validators = new(ValidatorFI, num=nvalidators)
         clients = new(Client, num=nclients)
 
         for v in validators:
@@ -45,11 +42,11 @@ class RunDiemBFT(process):
             public_keys_clients[c] = public_key
 
         for i, v in enumerate(validators):
-            setup({v}, (config, i, validators, list(clients),
+            setup({v}, (config, config_id, i, list(validators), list(clients),
                         private_keys_validators[v], public_keys_validators, public_keys_clients))
 
         for i, c in enumerate(clients):
-            setup({c}, (config, i, validators,
+            setup({c}, (config, config_id, i, list(validators),
                         private_keys_clients[c], public_keys_validators))
 
         start(validators)
@@ -80,12 +77,12 @@ def main():
         'nclientops': 5,
         'sleeptime': 1,
         'clienttimeout': 10,
-        'delta': 5,
+        'delta': 0.5,
         'window_size': 5,
         'exclude_size': 1,
         'failure_config': FailureConfig(
             failures=[
-                Failure(src='_', dest='leader', msg_type=MsgType.Vote,
+                Failure(src=2, dest='leader', msg_type=MsgType.Vote,
                         round=1, prob=1, fail_type=FailType.Delay, val=0.1, attr=None),
                 Failure(src='_', dest='_', msg_type=MsgType.Vote,
                         round=3, prob=1, fail_type=FailType.MsgLoss, val=None, attr=None),
@@ -95,12 +92,14 @@ def main():
             seed=12345678
         )
     }]
+    config_id = 0
     for config in configs:
         if not is_config_valid(config):
             output("The provided config", config,
                    "is not valid. Skipping this config.")
             continue
         p = new(RunDiemBFT)
-        setup(p, (config,))
+        setup(p, (config, config_id))
         start(p)
+        config_id += 1
     output("All configs executed!")
