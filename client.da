@@ -1,4 +1,5 @@
 import time
+import threading
 
 from cryptography import Cryptography
 from logger_util import Logging
@@ -26,21 +27,24 @@ class Client(process):
         fp = open(Logging.filename, 'w')
         fp.close()
 
+    def send_request(request):
+        signed_req = Cryptography.sign_message(request)
+        send(('Request', signed_req), to=validators)
+        Logging.log_event("Sent", "request", request, validators)
+        timer = threading.Timer(config['clienttimeout'], wait_and_retransmit_request, args=(
+            request, self.pending_success_results, self.f))
+        timer.start()
+
     def run():
         for i in range(nops):
-            request_id = str(client_id) + "-" + str(i)
+            request_id = str(client_id) + "_" + str(i)
             pending_success_results[request_id] = list()
             pending_fail_results[request_id] = list()
-            req = {
+            request = {
                 'req_id': request_id,
                 'command': str(client_id) + "-" + str(i)
             }
-            signed_req = Cryptography.sign_message(req)
-            send(('Request', signed_req), to=validators)
-            Logging.log_event("Sent", "request", req, validators)
-            # await(request_id in received_sufficient_responses)
-            # output('Got final response for request', req)
-            # time.sleep(sleep_time)
+            send_request(request)
         await(len(received_sufficient_responses) == nops)
         send(('Done',), to=parent())
 
@@ -60,3 +64,10 @@ class Client(process):
                 received_sufficient_responses.add(req_id)
                 Logging.log(
                     "Received sufficient failure replies from validators", req_id)
+
+    def wait_and_retransmit_request(req, pending_success_results, f):
+        if len(pending_success_results[req['req_id']]) < f + 1:
+            Logging.log(
+                "Client.wait_and_retransmit_request timed out, retransmitting", req)
+            pending_success_results[req['req_id']].clear()
+            send_request(req)

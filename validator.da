@@ -247,6 +247,10 @@ class ValidatorFI (process, Validator):
             # only allow SetAttr fail type to last nfaulty validators
             if failure_config.fail_type == FailType.SetAttr and self.validator_id >= len(self.replicas) - config['nfaulty']:
                 continue
+
+            if failure_config.round != self.pacemaker.current_round:
+                continue
+
             if failure_config.src == "leader":
                 if self.leader_election.get_leader(self.pacemaker.current_round) != self.replicas[self.validator_id]:
                     continue
@@ -262,9 +266,6 @@ class ValidatorFI (process, Validator):
                 continue
 
             if failure_config.msg_type != MsgType.Wildcard and failure_config.msg_type.name != message[0]:
-                continue
-
-            if failure_config.round != self.pacemaker.current_round:
                 continue
 
             return failure_config
@@ -294,7 +295,7 @@ class ValidatorFI (process, Validator):
                     Logging.log('ValidatorFI.send', 'message delayed')
                     thread = threading.Thread(target=send_msg_delayed, args=(
                         message, to, failure_config.val))
-                    thread.start
+                    thread.start()
             elif failure_config.fail_type == FailType.SetAttr:
                 if random.random() < 1 - failure_config.prob:
                     super().send(message, to)
