@@ -132,8 +132,12 @@ class Ledger:
         if prev_block != None:
             prev_block = prev_block.vote_info.id
             if prev_block in self.speculate_tree:
-                self.speculate_tree[prev_block] = [block_id]
-                del self.speculate_tree[prev_block]
+                for i in self.speculate_tree[prev_block]:
+                    if i != block:
+                        del self.speculate_tree[i]
+                self.speculate_tree[prev_block] = [block]
+                # self.speculate_tree[prev_block] = [block_id]
+                # del self.speculate_tree[prev_block]
 
         # for i in self.recently_committed_block_ids:
         #     if i == block_id:
