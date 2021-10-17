@@ -6,7 +6,7 @@ from logger_util import Logging
 
 class BlockTree:
     def __init__(self, validator_id, replicas, ledger, nfaulty, id_block):
-        self.pending_block_tree = []  # tree of blocks pending commitment
+        self.pending_block_tree = dict()  # tree of blocks pending commitment
         # collected votes per block indexed by their LedgerInfo hash
         self.pending_votes = dict()
         self.pending_signers = dict()
@@ -24,9 +24,11 @@ class BlockTree:
         if block.qc is None:
             self.ledger.speculate(None, block.id, [
                 txn['command'] for txn in block.payload])
+            self.pending_block_tree[block] = []
         else:
             self.ledger.speculate(block.qc.vote_info.id, block.id, [
                 txn['command'] for txn in block.payload])
+            self.pending_block_tree[self.id_block[block.qc.vote_info.id]] = block
         # self.pending_block_tree.add(block) TODO
         Logging.log('BlockTree: execute_and_insert ends', block)
 
@@ -80,6 +82,21 @@ class BlockTree:
         if qc is not None and qc.ledger_commit_info.commit_state_id != None:
             self.ledger.commit(qc.vote_info.parent_id)
             # self.pending_block_tree.prune(qc.vote_info.parent_id) TODO
+            current_block = self.id_block[qc.vote_info.parent_id]
+            prev_block_qc = current_block.qc
+            if prev_block_qc != None:
+                prev_block = self.id_block[current_block.qc.vote_info.id]
+                if prev_block in  self.pending_block_tree:
+                    self.pending_block_tree[prev_block] = current_block
+                    while(prev_block in self.pending_block_tree):
+                        del self.pending_block_tree[prev_block]
+                        current_block = prev_block
+                        prev_block_qc = current_block.qc
+                        if prev_block_qc == None:
+                            break
+                        prev_block = self.id_block[current_block.qc.vote_info.id]
+                    # now change the current and prevblock 
+
             self.high_commit_qc = get_qc_with_max_round(
                 qc, self.high_commit_qc)
         self.high_qc = get_qc_with_max_round(qc, self.high_qc)
