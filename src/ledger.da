@@ -18,7 +18,7 @@ class Ledger:
         self.id_to_block = id_block
         self.request_cache = request_cache
         self.filename = "validator_" + str(validator_id) + ".ledger"
-        fp = open('./ledgers/config' + str(config_id) +
+        fp = open('../ledgers/config' + str(config_id) +
                   "/" + self.filename, 'w')
         fp.close()
 
@@ -111,7 +111,7 @@ class Ledger:
         #         file.write("No parent")
         #     file.close()
 
-        fp = open('./ledgers/config' + str(self.config_id) +
+        fp = open('../ledgers/config' + str(self.config_id) +
                   "/" + self.filename, 'a+')
         while(stack):
             block_id, payload = stack.pop()

@@ -19,7 +19,7 @@ class Client(process):
         Logging.replicas = validators
         Logging.process_type = "client"
         Logging.process_id = client_id
-        Logging.filename = './logs/config' + str(config_id) \
+        Logging.filename = '../logs/config' + str(config_id) \
             + '/' + Logging.process_type + "_" + \
             str(Logging.process_id) + ".log"
         fp = open(Logging.filename, 'w')

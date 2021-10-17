@@ -41,7 +41,7 @@ class Validator (process):
         Logging.process_type = "validator"
         Logging.process_id = validator_id
         Logging.clients = clients
-        Logging.filename = './logs/config' + str(config_id) + '/' \
+        Logging.filename = '../logs/config' + str(config_id) + '/' \
             + Logging.process_type + "_" + str(Logging.process_id) + ".log"
         fp = open(Logging.filename, 'w')
         fp.close()
