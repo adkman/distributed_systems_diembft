@@ -44,6 +44,9 @@ class Safety:
         else:
             return None
 
+    def set_highest_vote_round(self, value):
+        self.__highest_vote_round = value
+
     def make_vote(self, block, last_tc):
         Logging.log('Safety: make_vote', block, last_tc)
         if block.qc is None:

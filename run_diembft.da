@@ -90,7 +90,7 @@ def main():
                 Failure(src='_', dest='_', msg_type=MsgType.Vote,
                         round=3, prob=1, fail_type=FailType.MsgLoss, val=None, attr=None),
                 Failure(src='leader', dest='_', msg_type=MsgType.Vote, round=3,
-                        prob=0.5, fail_type=FailType.SetAttr, val=2, attr='last_vote_round')
+                        prob=0.5, fail_type=FailType.SetAttr, val=2, attr='highest_vote_round')
             ],
             seed=12345678
         )

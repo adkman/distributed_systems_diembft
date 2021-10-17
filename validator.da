@@ -56,9 +56,8 @@ class Validator (process):
     def setattr(attr, value):
         if attr == 'current_round':
             self.pacemaker.current_round = value
-        elif attr == 'last_vote_round':
-            pass
-            # TODO set this? last_vote_round = value
+        elif attr == 'highest_vote_round':
+            self.safety.set_highest_vote_round(value)
         else:
             output('error: Validator.setattr: unsupported attribute')
 
