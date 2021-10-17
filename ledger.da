@@ -17,6 +17,14 @@ class Ledger:
         fp = open('./ledgers/' + self.filename, 'w')
         fp.close()
 
+        
+        # fp = open('./ledgers/' + self.filename, 'w')
+        # fp.close()
+        # sp = open('./ledgers/' + 'SpecTree' + self.filename,'w')
+        # sp.close()
+        # ap = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'w')
+        # ap.close()
+
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
         Logging.log('Ledger: get_state_id', prev_block_id,block_id,txns)
         if prev_block_id == None:
@@ -32,7 +40,7 @@ class Ledger:
     def speculate(self, prev_block_id, block_id, txns):
         Logging.log('Ledger: speculate', prev_block_id, block_id, txns)
         if prev_block_id == None:
-            self.speculate_tree[self.genesis] = [block_id]
+            # self.speculate_tree[self.genesis] = [block_id]
             self.speculate_tree[block_id] = []
 
         elif prev_block_id not in self.speculate_tree:
@@ -46,6 +54,11 @@ class Ledger:
 
         state_id = self.get_state_id(prev_block_id, block_id, txns)
         self.block_id_to_state_id[block_id] = state_id
+
+        # fp = open('./ledgers/' + 'SpecTree' + self.filename,'a+')
+        # fp.write(str(self.speculate_tree))
+        # fp.write('\n')
+        # fp.close()
 
     def pending_state(self, block_id):
         Logging.log('Ledger: pending_state', block_id)
@@ -61,6 +74,7 @@ class Ledger:
         if block_id not in self.id_to_block:
             Logging.log('Ledger: commit: did not commit', None)
             return
+        recently_commited = set()
         current_block_to_commit = self.id_to_block[block_id]
         stack = []
         while(current_block_to_commit.id not in self.commited):
@@ -69,6 +83,7 @@ class Ledger:
                 break
             stack.append((current_block_to_commit.id,
                           current_block_to_commit.payload))
+            recently_commited.add(current_block_to_commit.id)
 
             # Pruning Logic
             # prev_commited_block_id = current_block_to_commit.id
@@ -84,6 +99,20 @@ class Ledger:
             # parent = current_block_to_commit.id
             # if len(self.speculate_tree[parent]) > 1:
             #     self.speculate_tree[parent] = [prev_commited_block_id]
+        # if len(recently_commited) > 0:
+        #     file = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'a+')
+        #     file.write('\n')
+        #     file.write("commited" + str(recently_commited))
+        #     file.write("\n")
+        #     block = self.id_to_block[block_id]
+        #     prev_block = block.qc
+        #     if prev_block != None:
+        #         file.write("Parent is ")
+        #         prev_block = prev_block.vote_info.id
+        #         file.write(str(prev_block)+'\n')
+        #     else:
+        #         file.write("No parent")
+        #     file.close()
 
         fp = open('./ledgers/' + self.filename, 'a+')
         while(stack):
@@ -97,9 +126,31 @@ class Ledger:
         fp.close()
 
         Logging.log('Ledger: commit: ends', None)
+        # if len(recently_commited) > 0:
+        #     file = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'a+')
+        #     file.write("\n"+str(self.speculate_tree))
+        #     file.close()
 
-        # prune
-        # for i in self.spec_tree
+        # Pruning the SpeculateTree
+        block = self.id_to_block[block_id]
+        prev_block = block.qc
+        if prev_block != None:
+            prev_block = prev_block.vote_info.id
+            if prev_block in self.speculate_tree:
+                self.speculate_tree[prev_block] = block_id
+                del self.speculate_tree[prev_block]
+
+        for i in recently_commited:
+            if i == block_id:
+                continue
+            del self.speculate_tree[i]
+                
+        # if len(recently_commited) > 0:
+        #     file = open('./ledgers/' + 'PrunedSpecTree' + self.filename,'a+')
+        #     file.write(str(self.speculate_tree)+'\n')
+        #     file.close()
+
+
 
     def committed_block(self, block_id):
         Logging.log('Ledger: committed_block', block_id)
