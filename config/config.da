@@ -20,7 +20,7 @@ configs = [
                 # Failure(src='leader', dest='_', msg_type=MsgType.Vote, round=3,
                 #         prob=0.5, fail_type=FailType.SetAttr, val=2, attr='highest_vote_round')
             ],
-            seed=12345678
+            seed=637713655
         )
     },
     {

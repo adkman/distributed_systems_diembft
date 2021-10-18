@@ -6,7 +6,7 @@ from block_tree import BlockTree
 from cryptography import Cryptography
 from leader_election import LeaderElection
 from ledger import Ledger
-from logger_util import Logging
+from logger_util import LOGGER
 from mem_pool import MemPool
 from object_types import FailType, MsgType, ProposalMsg
 from pacemaker import Pacemaker
@@ -16,6 +16,15 @@ from safety import Safety
 class Validator (process):
 
     def setup(config, config_id: int, validator_id: int, replicas: list, clients: list, private_key, public_keys_validators, public_keys_clients):
+
+        LOGGER.replicas = replicas
+        LOGGER.process_id = "validator_" + str(validator_id)
+        LOGGER.clients = clients
+        LOGGER.filename = '../logs/config' + str(config_id) + '/' \
+            + LOGGER.process_id + ".log"
+
+        LOGGER.log_action("Initial configuration", config)
+
         self.id_block = dict()
         self.request_cache = dict()
         self.recently_committed_block_ids = list()
@@ -37,19 +46,10 @@ class Validator (process):
         Cryptography.replicas = self.replicas
         Cryptography.public_keys_validators = self.public_keys_validators
 
-        Logging.replicas = replicas
-        Logging.process_type = "validator"
-        Logging.process_id = validator_id
-        Logging.clients = clients
-        Logging.filename = '../logs/config' + str(config_id) + '/' \
-            + Logging.process_type + "_" + str(Logging.process_id) + ".log"
-        fp = open(Logging.filename, 'w')
-        fp.close()
-
         if config['failure_config'].seed is None:
             config['failure_config'].seed = random.randint(10000, 100000)
-            Logging.log("Generated a seed for failure config",
-                        config['failure_config'].seed)
+            LOGGER.log_action("Generated a seed for failure config",
+                               config['failure_config'].seed)
 
         random.seed(config['failure_config'].seed)
 
@@ -62,29 +62,29 @@ class Validator (process):
             output('error: Validator.setattr: unsupported attribute')
 
     def send_timeout_msg(timeout_msg):
-        Logging.log('Validator: send_timeout_message', timeout_msg)
+        LOGGER.log('Validator: send_timeout_message', timeout_msg)
         send(('Timeout', timeout_msg), to=self.replicas)
+        LOGGER.log_event('Sent', 'Timeout', timeout_msg, self.replicas)
 
     def run():
         self.pacemaker.start_timer(1)
-        Logging.log(replicas[validator_id])
+        LOGGER.log(replicas[validator_id])
         await(received(('Done',), from_=parent()))
         self.pacemaker.stop_timer(self.pacemaker.current_round)
         output("Validator", self.validator_id, "is exiting")
 
     def send_response(response, client):
-        Logging.log('Validator: send_response', response, client)
+        LOGGER.log('Validator: send_response', response, client)
         send(('Response', response), to=client)
-        Logging.log_event("Sent", "cached response", response, client)
 
     def process_certificate_qc(qc):
-        Logging.log('Validator: process_certificate_qc', qc)
+        LOGGER.log('Validator: process_certificate_qc', qc)
 
         self.blocktree.process_qc(qc)
         # If any block was recently committed in this flow
         # Send the responses to the respective clients in the
         # block's transactions and cache them
-        Logging.log('Validator: process_certificate_qc recent_committed_block', len(
+        LOGGER.log('Validator: process_certificate_qc recent_committed_block', len(
             self.recently_committed_block_ids))
         if len(self.recently_committed_block_ids) > 0:
             for block_id in self.recently_committed_block_ids:
@@ -95,15 +95,16 @@ class Validator (process):
                         'resp_status': "success"
                     }
                     send_response(resp, txn['client'])
+                    LOGGER.log_event("Sent", "Response", resp, txn['client'])
                     self.request_cache[request_id] = resp
             self.recently_committed_block_ids.clear()
 
         self.leader_election.update_leaders(qc)
         self.pacemaker.advance_round_qc(qc)
-        Logging.log('Validator: process_certificate_qc ended', qc)
+        LOGGER.log('Validator: process_certificate_qc ended', qc)
 
     def process_new_round_event(last_tc):
-        Logging.log('Validator: process_new_round_event', last_tc)
+        LOGGER.log('Validator: process_new_round_event', last_tc)
         if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
             if self.mempool.peek_pool() == 0:
                 self.should_start_new_round = True
@@ -117,12 +118,13 @@ class Validator (process):
                     prev_prev_block_txn_len = 0
 
                 if prev_block_txn_len == 0 and prev_prev_block_txn_len == 0:
-                    Logging.log(
+                    LOGGER.log(
                         'Validator: process_new_round_event: returned as no transactions in mempool', last_tc)
                     return
 
             block = self.blocktree.generate_block(
                 self.mempool.get_transactions(), self.pacemaker.current_round)
+            LOGGER.log_action('Created a new block', block)
 
             proposal_msg = ProposalMsg(
                 block=block,
@@ -130,23 +132,21 @@ class Validator (process):
                 high_commit_qc=self.blocktree.high_commit_qc,
                 validator=validator_id
             )
-            # signed_proposal_msg = Cryptography.sign_message(proposal_msg)
-            # send(('Proposal', signed_proposal_msg), to=self.replicas)
             send(('Proposal', proposal_msg), to=self.replicas)
-            Logging.log_event("Sent", "ProposalMsg",
+            LOGGER.log_event("Sent", "Proposal",
                               proposal_msg, self.replicas)
-        Logging.log("Validator: process_new_round_event ends", None)
 
-    def receive(msg=('LocalTimeout',), from_=p):
-        Logging.log_event("Received", "LocalTimeout", None, p)
-        self.pacemaker.local_timeout_round()
+        LOGGER.log("Validator: process_new_round_event ends", None)
 
     def receive(msg=('Proposal', proposal_msg), from_=p):
-        Logging.log_event("Received", "ProposalMsg", proposal_msg, p)
+        LOGGER.log_event("Received", "Proposal", proposal_msg, p)
+
         signature_verified = Cryptography.get_verified_message(
             proposal_msg.signature, public_keys_validators[p])
-        Logging.log_event("Verified", "ProposalMsg", signature_verified, p)
+
         if signature_verified is not None:
+            LOGGER.log_action("Verified ProposalMsg signature", True)
+
             self.should_start_new_round = False
             if proposal_msg.block.qc is not None and p != replicas[validator_id]:
                 process_certificate_qc(proposal_msg.block.qc)
@@ -160,7 +160,7 @@ class Validator (process):
             if p != replicas[validator_id]:
                 # Validate the transactions in current mempool with the received txns
                 if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
-                    Logging.log(
+                    LOGGER.log(
                         "Not processing the Proposal message as transactions are not valid", None)
                     return
 
@@ -170,63 +170,68 @@ class Validator (process):
             vote_msg = self.safety.make_vote(
                 proposal_msg.block, proposal_msg.last_round_tc)
             if vote_msg is not None:
-                # signed_vote_msg = Cryptography.sign_message(vote_msg)
                 next_leader = self.leader_election.get_leader(round + 1)
-                # send(('Vote', signed_vote_msg),
-                #      to=next_leader)
                 send(('Vote', vote_msg),
                      to=next_leader)
+                LOGGER.log_event("Sent", "Vote", vote_msg, next_leader)
 
-                Logging.log_event("Sent", "VoteMsg", vote_msg, next_leader)
         else:
-            # TODO: Add mechanism to handle this
-            output(p, "'s ProposalMsg signature could not be verified")
+            LOGGER.log_action("Verified ProposalMsg signature", False)
 
     def receive(msg=('Vote', vote_msg), from_=p):
-        Logging.log_event("Received", "VoteMsg", vote_msg, p)
+        LOGGER.log_event("Received", "Vote", vote_msg, p)
+
         signature_verified = Cryptography.get_verified_message(
             vote_msg.signature, public_keys_validators[p])
-        Logging.log_event("Verified", "VoteMsg", signature_verified, p)
+
         if signature_verified is not None:
+            LOGGER.log_action("Verified VoteMsg signature", True)
+
             qc = self.blocktree.process_vote(vote_msg)
             if qc is not None:
+                LOGGER.log_action("Generated a Quorum Certificate", qc)
+
                 process_certificate_qc(qc)
                 process_new_round_event(None)
 
         else:
-            # TODO: Add mechanism to handle this
-            output(p, "'s VoteMsg signature could not be verified")
-        Logging.log("Received VoteMsg ends g", None)
+            LOGGER.log_action("Verified VoteMsg signature", False)
+
+        LOGGER.log("Received VoteMsg ends g", None)
 
     def receive(msg=('Timeout', timeout_msg), from_=p):
-        Logging.log_event("Received", "TimeoutMsg", timeout_msg, p)
+        LOGGER.log_event("Received", "Timeout", timeout_msg, p)
+
         signature_verified = Cryptography.get_verified_message(
             timeout_msg.tmo_info.author_signature, public_keys_validators[p])
-        Logging.log_event("Verified", "TimeoutMsg", signature_verified, p)
+
         if signature_verified is not None:
+            LOGGER.log_action("Verified TimeoutMsg signature", True)
+
             process_certificate_qc(timeout_msg.tmo_info.high_qc)
             process_certificate_qc(timeout_msg.high_commit_qc)
+
             self.pacemaker.advance_round_tc(timeout_msg.last_round_tc)
+
             tc = self.pacemaker.process_remote_timeout(timeout_msg)
             if tc is not None:
+                LOGGER.log_action("Generated a Timeout Certificate", tc)
+
                 self.pacemaker.advance_round_tc(tc)
                 process_new_round_event(tc)
         else:
-            print("Not verified")
-            # TODO: Add mechanism to handle this
-            output(p, "'s TimeoutMsg signature could not be verified")
+            LOGGER.log_action("Verified TimeoutMsg signature", False)
 
     def receive(msg=('Request', signed_req), from_=client):
-        Logging.log("Receving Request", None)
         req = Cryptography.get_verified_message(
             signed_req, public_keys_clients[client])
-        Logging.log_event("Received", "request", req, client)
+        LOGGER.log_event("Received", "Request", req, client)
+
         if req is not None:
             if req['req_id'] in self.request_cache:
                 response = self.request_cache[req['req_id']]
-                Logging.log(
-                    "Validator: request: reply with cached response", None)
                 send_response(response, client)
+                LOGGER.log_event("Sent", "Cached Response", response, client)
                 return
 
             req['client'] = client
@@ -236,8 +241,7 @@ class Validator (process):
                 process_new_round_event(None)
                 self.should_start_new_round = False
         else:
-            # TODO: Add mechanism to handle this, send something to client
-            output(client, "'s signature could not be verified")
+            LOGGER.log_action("Verified Client Request signature", False)
 
 
 class ValidatorFI (process, Validator):
@@ -268,7 +272,10 @@ class ValidatorFI (process, Validator):
             if failure_config.msg_type != MsgType.Wildcard and failure_config.msg_type.name != message[0]:
                 continue
 
-            return failure_config
+            if random.random() < 1 - failure_config.prob:
+                return None
+            else:
+                return failure_config
         return None
 
     def send_msg_delayed(message, to, val):
@@ -277,31 +284,25 @@ class ValidatorFI (process, Validator):
 
     def send(message, to):
         failure_config = get_failure_config(message, to)
-        Logging.log('ValidatorFI.send', failure_config)
+        LOGGER.log('ValidatorFI.send', failure_config)
         if failure_config is None:
             super().send(message, to)
         else:
-            Logging.log_event('Sending potential faulty msg',
-                              failure_config.fail_type.name, message, to)
+            LOGGER.log_action('Injecting fault',
+                               [failure_config.fail_type.name, message, to])
             if failure_config.fail_type == FailType.MsgLoss:
-                if random.random() < 1 - failure_config.prob:
-                    super().send(message, to)
-                else:
-                    Logging.log('ValidatorFI.send', 'message dropped')
+                LOGGER.log('ValidatorFI.send', 'message dropped')
+
             elif failure_config.fail_type == FailType.Delay:
-                if random.random() < 1 - failure_config.prob:
-                    super().send(message, to)
-                else:
-                    Logging.log('ValidatorFI.send', 'message delayed')
-                    thread = threading.Thread(target=send_msg_delayed, args=(
-                        message, to, failure_config.val))
-                    thread.start()
+                LOGGER.log('ValidatorFI.send', 'message delayed')
+                thread = threading.Thread(target=send_msg_delayed, args=(
+                    message, to, failure_config.val))
+                thread.start()
+
             elif failure_config.fail_type == FailType.SetAttr:
-                if random.random() < 1 - failure_config.prob:
-                    super().send(message, to)
-                else:
-                    Logging.log('ValidatorFI.send', 'config changed')
-                    setattr(failure_config.attr, failure_config.val)
+                LOGGER.log('ValidatorFI.send', 'config changed')
+                setattr(failure_config.attr, failure_config.val)
+
             else:
                 output('error: ValidatorFI.send: unsupported fail type',
                        failure_config.fail_type)

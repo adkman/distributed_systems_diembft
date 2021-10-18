@@ -1,15 +1,15 @@
-from object_types import TC, TimeoutMsg
-from logger_util import Logging
 import threading
-from block_tree import BlockTree
+
+from logger_util import LOGGER
+from object_types import TC, TimeoutMsg
 
 
 class Pacemaker:
 
     def __init__(self, validator_id, replicas, blocktree, safety, nfaulty, delta, send_timeout_msg):
-        self.current_round = 1  # Initially zero
-        self.last_round_tc = None  # Initially None
-        self.pending_timeouts = dict()  # Timeouts per rounda
+        self.current_round = 1
+        self.last_round_tc = None
+        self.pending_timeouts = dict()
         self.f = nfaulty
         self.delta = delta
         self.validator = replicas[validator_id]
@@ -24,18 +24,16 @@ class Pacemaker:
         self.tmo_senders = dict()
 
     def get_round_timer(self, r):
-        Logging.log('Pacemaker: get_round_timer', r)
-        # TODO: Can modify formula if wanted
+        LOGGER.log('Pacemaker: get_round_timer', r)
         return 4*self.delta
 
     def stop_timer(self, round):
-        Logging.log('Pacemaker: stop_timer', round)
+        LOGGER.log('Pacemaker: stop_timer', round)
         if self.timer is not None:
             self.timer.cancel()
 
-    # TODO: Read "Questions regarding MemPool Implementation" on Blackboard Discussion
     def start_timer(self, new_round):
-        Logging.log('Pacemaker: start_timer', new_round)
+        LOGGER.log('Pacemaker: start_timer', new_round)
         self.stop_timer(self.current_round)
         self.current_round = new_round
         self.timer = threading.Timer(self.get_round_timer(
@@ -43,43 +41,40 @@ class Pacemaker:
         self.timer.start()
 
     def local_timeout_round(self):
-        Logging.log('Pacemaker: local_timeout_round', [])
+        LOGGER.log('Pacemaker: local_timeout_round', [])
         timeout_info = self.safety.make_timeout(
             self.current_round, self.blocktree.high_qc, self.last_round_tc)
-        # TODO: How to broadcast? Need to make PaceMaker as a process???
-        # TODO: private_key, replicas is not there with Pacemaker, MERGE with validator
         if timeout_info is not None:
+            LOGGER.log_action("Local Timeout occurred", timeout_info)
             timeout_msg = TimeoutMsg(
                 timeout_info, self.last_round_tc, self.blocktree.high_commit_qc)
-            Logging.log("Timeout Msg parameters", timeout_info,
+            LOGGER.log("Timeout Msg parameters", timeout_info,
                         self.last_round_tc, self.blocktree.high_commit_qc)
             self.send_timeout_msg(timeout_msg)
 
     def process_remote_timeout(self, tmo):
-        Logging.log('Pacemaker: process_remote_timeout', tmo)
-        # print("Content", tmo.tmo_info, tmo.tmo_info.__dict__)
+        LOGGER.log('Pacemaker: process_remote_timeout', tmo)
         tmo_info = tmo.tmo_info
         if tmo_info.round < self.current_round:
-            Logging.log('Pacemaker: process_remote_timeout: returns', None)
+            LOGGER.log('Pacemaker: process_remote_timeout: returns', None)
             return None
+
         if tmo_info.round not in self.pending_timeouts:
             self.pending_timeouts[tmo_info.round] = []
             self.tmo_senders[tmo_info.round] = []
             self.tmo_signatures[tmo_info.round] = []
-        # if tmo_info.author not in self.pending_timeouts[tmo_info.round].senders:
+
         if tmo_info.author not in self.tmo_senders[tmo_info.round]:
             self.pending_timeouts[tmo_info.round].append(tmo_info)
             self.tmo_senders[tmo_info.round].append(tmo_info.author)
-            self.tmo_signatures[tmo_info.round].append(tmo_info.author_signature)
+            self.tmo_signatures[tmo_info.round].append(
+                tmo_info.author_signature)
 
-        # if len(self.pending_timeouts[tmo_info.round].senders) == self.f + 1:
         if len(self.tmo_senders[tmo_info.round]) == self.f + 1:
             self.stop_timer(self.current_round)
             self.local_timeout_round()  # Bracha timeout
-        # if len(self.pending_timeouts[tmo_info.round].senders) == 2*self.f + 1:
+
         if len(self.tmo_senders[tmo_info.round]) == 2*self.f + 1:
-            # print("Entering here")
-            # tmo_high_qc_rounds = set([t.high_qc.round for t in self.pending_timeouts[tmo_info.round]])
             tmo_high_qc_rounds = []
             for t in self.pending_timeouts[tmo_info.round]:
                 if t.high_qc != None:
@@ -87,36 +82,31 @@ class Pacemaker:
                 else:
                     tmo_high_qc_rounds.append(0)
 
-            # # signatures = set([t.signature for t in self.pending_timeouts[tmo_info.round]])
-            # for t in self.pending_timeouts[tmo_info.round]:
-            #     signatures.append(t.author_signature)
-
             tc = TC(tmo_info.round, tmo_high_qc_rounds,
                     self.tmo_signatures[tmo_info.round], self.tmo_senders[tmo_info.round], self.validator_id)
-            Logging.log('Pacemaker: process_remote_timeout: returns', tc)
             return tc
-        Logging.log('Pacemaker: process_remote_timeout: returns', None)
+        LOGGER.log('Pacemaker: process_remote_timeout: returns', None)
         return None
 
     def advance_round_tc(self, tc):
-        Logging.log('Pacemaker: advance_round_tc', tc)
+        LOGGER.log('Pacemaker: advance_round_tc', tc)
         if tc == None or tc.round < self.current_round:
-            Logging.log('Pacemaker: advance_round_tc: returns', False)
+            LOGGER.log('Pacemaker: advance_round_tc: returns', False)
             return False
         self.last_round_tc = tc
         self.start_timer(tc.round + 1)
-        Logging.log('Pacemaker: advance_round_tc: returns', True)
+        LOGGER.log_action('Advancing to round due to TC', self.current_round)
         return True
 
     def advance_round_qc(self, qc):
-        Logging.log('Pacemaker: advance_round_qc', qc)
+        LOGGER.log('Pacemaker: advance_round_qc', qc)
         if qc is None:
-            Logging.log('Pacemaker: advance_round_qc: returns', True)
+            LOGGER.log('Pacemaker: advance_round_qc: returns', True)
             return True
         if qc.vote_info.round < self.current_round:
-            Logging.log('Pacemaker: advance_round_qc: returns', False)
+            LOGGER.log('Pacemaker: advance_round_qc: returns', False)
             return False
         self.last_round_tc = None
         self.start_timer(qc.vote_info.round + 1)
-        Logging.log('Pacemaker: advance_round_qc: returns', True)
+        LOGGER.log_action('Advancing to round due to QC', self.current_round)
         return True

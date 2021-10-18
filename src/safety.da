@@ -1,5 +1,5 @@
 from cryptography import Cryptography
-from logger_util import Logging
+from logger_util import LOGGER
 from object_types import LedgerCommitInfo, TimeoutInfo, VoteInfo, VoteMsg
 
 
@@ -14,20 +14,20 @@ class Safety:
         self.blocktree = blocktree
 
     def __increase_highest_vote_round(self, round):
-        Logging.log("Safety: __increase_highest_vote_round", round)
+        LOGGER.log("Safety: __increase_highest_vote_round", round)
         self.__highest_vote_round = max(round, self.__highest_vote_round)
-        Logging.log("Safety: __increase_highest_vote_round returns",
+        LOGGER.log("Safety: __increase_highest_vote_round returns",
                     self.__highest_vote_round)
 
     def __update_highest_qc_round(self, qc_round):
-        Logging.log("Safety: __update_highest_qc_round", qc_round)
+        LOGGER.log("Safety: __update_highest_qc_round", qc_round)
         self.__highest_qc_round = max(qc_round, self.__highest_qc_round)
-        Logging.log("Safety: __update_highest_qc_round returns",
+        LOGGER.log("Safety: __update_highest_qc_round returns",
                     self.__highest_qc_round)
 
     def __consecutive(self, block_round, round):
-        Logging.log("Safety: __consecutive", block_round, round)
-        Logging.log("Safety: __consecutive returns", round + 1 == block_round)
+        LOGGER.log("Safety: __consecutive", block_round, round)
+        LOGGER.log("Safety: __consecutive returns", round + 1 == block_round)
         return round + 1 == block_round
 
     def __safe_to_extend(self, block_round, qc_round, tc):
@@ -35,17 +35,17 @@ class Safety:
             tc_round = 0
         else:
             tc_round = tc.round
-        Logging.log("Safety: __safe_to_extend", block_round, qc_round, tc)
-        Logging.log("Safety: __safe_to_extend returns", self.__consecutive(
+        LOGGER.log("Safety: __safe_to_extend", block_round, qc_round, tc)
+        LOGGER.log("Safety: __safe_to_extend returns", self.__consecutive(
             block_round, tc_round) and qc_round >= max(tc.tmo_high_qc_rounds))
         return self.__consecutive(block_round, tc_round) and qc_round >= max(tc.tmo_high_qc_rounds)
 
     def __safe_to_vote(self, block_round, qc_round, tc):
-        Logging.log("Safety: __safe_to_vote", block_round, qc_round, tc)
+        LOGGER.log("Safety: __safe_to_vote", block_round, qc_round, tc)
         if block_round <= max(self.__highest_vote_round, qc_round):
-            Logging.log("Safety: __safe_to_vote returns1", False)
+            LOGGER.log("Safety: __safe_to_vote returns1", False)
             return False
-        Logging.log("Safety: __safe_to_vote returns2", self.__consecutive(
+        LOGGER.log("Safety: __safe_to_vote returns2", self.__consecutive(
             block_round, qc_round) or self.__safe_to_extend(block_round, qc_round, tc))
         return self.__consecutive(block_round, qc_round) or self.__safe_to_extend(block_round, qc_round, tc)
 
@@ -54,30 +54,30 @@ class Safety:
             tc_round = 0
         else:
             tc_round = tc.round
-        Logging.log("Safety: __safe_to_timeout", round, qc_round, tc)
+        LOGGER.log("Safety: __safe_to_timeout", round, qc_round, tc)
         if (qc_round < self.__highest_qc_round) or (round <= max(self.__highest_vote_round - 1, qc_round)):
-            Logging.log("Safety: __safe_to_timeout returns1", False)
+            LOGGER.log("Safety: __safe_to_timeout returns1", False)
             return False
-        Logging.log("Safety: __safe_to_timeout returns2", self.__consecutive(
+        LOGGER.log("Safety: __safe_to_timeout returns2", self.__consecutive(
             round, qc_round) or self.__consecutive(round, tc_round))
         return self.__consecutive(round, qc_round) or self.__consecutive(round, tc_round)
 
     def __commit_state_id_candidate(self, block_round, qc_round, qc_block_id):
-        Logging.log("Safety: __commit_state_id_candidate",
+        LOGGER.log("Safety: __commit_state_id_candidate",
                     block_round, qc_round, qc_block_id)
         if self.__consecutive(block_round, qc_round):
-            Logging.log("Safety: __commit_state_id_candidate returns1",
+            LOGGER.log("Safety: __commit_state_id_candidate returns1",
                         self.ledger.pending_state(qc_block_id))
             return self.ledger.pending_state(qc_block_id)
         else:
-            Logging.log("Safety: __commit_state_id_candidate returns2", None)
+            LOGGER.log("Safety: __commit_state_id_candidate returns2", None)
             return None
 
     def set_highest_vote_round(self, value):
         self.__highest_vote_round = value
 
     def make_vote(self, block, last_tc):
-        Logging.log('Safety: make_vote', block, last_tc)
+        LOGGER.log('Safety: make_vote', block, last_tc)
         if block.qc is None:
             qc_round = 0
             qc_block_id = "0"
@@ -105,13 +105,13 @@ class Safety:
                 self.blocktree.high_commit_qc,
                 self.validator_id
             )
-            Logging.log('Safety: make_vote: returns', vote_msg)
+            LOGGER.log('Safety: make_vote: returns', vote_msg)
             return vote_msg
-        Logging.log('Safety: make_vote: returns', None)
+        LOGGER.log('Safety: make_vote: returns', None)
         return None
 
     def make_timeout(self, round, high_qc, last_tc):
-        Logging.log('Safety: make_timeout', round, high_qc, last_tc)
+        LOGGER.log('Safety: make_timeout', round, high_qc, last_tc)
         if high_qc is None:
             qc_round = 0
         else:
@@ -122,7 +122,7 @@ class Safety:
                 high_qc,
                 self.validator_id
             )
-            Logging.log('Safety: make_timeout: returns1', tmo_info)
+            LOGGER.log('Safety: make_timeout: returns1', tmo_info)
             return tmo_info
-        Logging.log('Safety: make_timeout: returns2', None)
+        LOGGER.log('Safety: make_timeout: returns2', None)
         return None

@@ -1,43 +1,70 @@
 import datetime
-import pickle
+
+from utils import todict
 
 
-class Logging:
+class LOGGER:
 
-    process_type = ""
-    process_id = -1
+    process_id = ""
     replicas = []
     clients = []
     filename = ""
 
-    def log_event(event, event_type, message, proc=None):
-        if type(proc) == set or type(proc) == list:
-            src_dest = "Validators"
-            src_dest_id = "ALL"
-        elif proc in Logging.replicas:
-            src_dest = "Validator"
-            src_dest_id = Logging.replicas.index(proc)
-        elif proc in Logging.clients:
-            src_dest = "Client"
-            src_dest_id = Logging.clients.index(proc)
+    def log_event(event, msg_type, msg, proc=None):
+        if proc is None:
+            pass
+        elif type(proc) == set or type(proc) == list:
+            other_proc = "ALL validators"
+        elif proc in LOGGER.replicas:
+            other_proc = "validator_" + str(LOGGER.replicas.index(proc))
+        elif proc in LOGGER.clients:
+            other_proc = "client_" + str(LOGGER.clients.index(proc))
+        else:
+            other_proc = "parent_process"
 
-        timestamp = datetime.datetime.now()
-        f = open(Logging.filename, 'a+')
-        # if message != None and hasattr(message, '__dict__'):
-        #     message = message.__dict__
-        print(timestamp, Logging.process_type, Logging.process_id,
-              event, event_type, src_dest, src_dest_id, message, file=f)
+        if msg != None and hasattr(msg, '__dict__'):
+            msg = todict(msg)
+        to_from = "To:"
+        if event.lower() == 'sent':
+            to_from = "To:"
+        elif event.lower() == 'received':
+            to_from = "From:"
+
+        f = open(LOGGER.filename, 'a+')
+        print(
+            "Timestamp:", datetime.datetime.now(), "|",
+            "ProcessId:", LOGGER.process_id, "|",
+            "Event:", event, "|",
+            "MsgType:", msg_type, "|",
+            to_from, other_proc, "|",
+            "Msg:", msg,
+            file=f
+        )
         f.close()
 
-    def log(funcname, *params):
-        timestamp = datetime.datetime.now()
-        f = open(Logging.filename, 'a+')
-        p_list = []
-        for p in params:
-            if p != None and hasattr(p, '__dict__'):
-                p = p.__dict__
-            p_list.append(p)
+    def log_action(action, obj):
+        if obj != None and hasattr(obj, '__dict__'):
+            obj = todict(obj)
 
-        print(timestamp, Logging.process_type, Logging.process_id,
-              funcname, p_list, file=f)
+        f = open(LOGGER.filename, 'a+')
+        print(
+            "Timestamp:", datetime.datetime.now(), "|",
+            "ProcessId:", LOGGER.process_id, "|",
+            "Action:", action, "|",
+            "Object:", obj, "|",
+            file=f
+        )
         f.close()
+
+    def log(funcname, *params): pass
+        # timestamp = datetime.datetime.now()
+        # f = open(LOGGER.filename, 'a+')
+        # p_list = []
+        # for p in params:
+        #     if p != None and hasattr(p, '__dict__'):
+        #         p = p.__dict__
+        #     p_list.append(p)
+
+        # print(timestamp, LOGGER.process_id,
+        #       funcname, p_list, file=f)
+        # f.close()
