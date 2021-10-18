@@ -273,6 +273,7 @@ class Validator (process):
 
         if req is not None:
             if req['req_id'] in self.request_cache:
+                # Directly reply with the cached response
                 response = self.request_cache[req['req_id']]
                 send(('Response', response), to=client)
                 LOGGER.log_event("Sent", "Cached Response", response, client)
@@ -290,9 +291,9 @@ class Validator (process):
 
 class ValidatorFI (process, Validator):
 
-    # Get a matching failure configuration
     def get_failure_config(message, to):
         for failure_config in self.config['failure_config'].failures:
+
             # only allow SetAttr fail type to last nfaulty validators
             if failure_config.fail_type == FailType.SetAttr and self.validator_id < len(self.replicas) - config['nfaulty']:
                 continue
@@ -328,8 +329,9 @@ class ValidatorFI (process, Validator):
         super().send(message, to)
 
     def send(message, to):
+        # Get a matching failure configuration
         failure_config = get_failure_config(message, to)
-        LOGGER.log('ValidatorFI.send', failure_config)
+
         if failure_config is None:
             super().send(message, to)
         else:
