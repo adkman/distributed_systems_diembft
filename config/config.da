@@ -132,5 +132,25 @@ configs = [
             ],
             seed=637713655
         )
+    },
+    {
+        'nvalidators': 7,
+        'nfaulty': 2,
+        'nclients': 6,
+        'nclientops': 9,
+        'sleeptime': 1,
+        'clienttimeout': 10,
+        'delta': 4,
+        'window_size': 5,
+        'exclude_size': 3,
+        'failure_config': FailureConfig(
+            failures=[
+                Failure(src='_', dest='leader', msg_type=MsgType.Vote,
+                        round=2, prob=1, fail_type=FailType.MsgLoss, val=None, attr=None),
+                Failure(src='_', dest='_', msg_type=MsgType.Timeout,
+                        round=2, prob=0.25, fail_type=FailType.MsgLoss, val=None, attr=None)
+            ],
+            seed=637713655
+        )
     }
 ]
