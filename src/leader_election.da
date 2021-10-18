@@ -87,9 +87,11 @@ class LeaderElection:
             current_qc = current_block.qc
             i = i + 1
         '''active validators ← active validators \ last authors // contains at least 1 validator'''
+        #Select active validators which were not leaders recently
         active_validators = active_validators.difference(
             last_authors)
 
+        #Use consistent random seed across all validators, to deterministically select the same leader  
         '''return active validators.pick one(seed ← qc.voteinfo.round)'''
         random.seed(qc.vote_info.round)
         leader_indx = random.choice(list(active_validators))
