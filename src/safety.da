@@ -115,7 +115,7 @@ class Safety:
         self.__highest_vote_round = value
 
     '''Function make vote(b, last tc)'''
-
+    #Creates vote message containing vote_info, and ledger_commit_info if valid
     def make_vote(self, block, last_tc):
         LOGGER.log('Safety: make_vote', block, last_tc)
         if block.qc is None:
@@ -165,7 +165,7 @@ class Safety:
         return None
 
     '''Function make timeout(round, high qc, last tc)'''
-
+    #Verify signatures and tmo_signatures in QC & TC, and Create appropriate TimeoutInfo object 
     def make_timeout(self, round, high_qc, last_tc):
         LOGGER.log('Safety: make_timeout', round, high_qc, last_tc)
         if high_qc is None:

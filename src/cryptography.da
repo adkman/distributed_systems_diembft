@@ -3,11 +3,12 @@ import nacl.encoding
 import pickle
 import nacl.hash
 
-
+''''''
 class Cryptography:
     def hash(*data):
         return nacl.hash.sha256(pickle.dumps(data), encoder=nacl.encoding.HexEncoder)
 
+    #Create Pair of private and public key for clients and validators
     def generate_key():
         signing_key = nacl.signing.SigningKey.generate()
         verification_key = signing_key.verify_key
@@ -16,12 +17,15 @@ class Cryptography:
     def sign_message(message):
         return Cryptography.private_key.sign(Cryptography.get_bytes_from_data(message))
  
+    #Serialize data
     def get_bytes_from_data(message):
         return pickle.dumps(message)
 
+    #Deserialze data
     def get_data_from_bytes(message):
         return pickle.loads(message)
 
+    #Get actual message from signed message and public key
     def get_verified_message(signed_message, public_key):
         try:
             bytes_data = public_key.verify(signed_message)
@@ -29,11 +33,14 @@ class Cryptography:
         except:
             return None
 
+    #Check if the message has valid signatures
+    #For TC verify tmo_signatures, for QC check verify signatures, for Block verify author_signature
     def valid_signatures(message):
         if message is None:
             return True
         all_signatures_valid = True
 
+        #Check if message is of type TC
         if hasattr(message, 'tmo_signatures'):
             signatures = message.tmo_signatures
             signers = message.tmo_signers
@@ -42,6 +49,7 @@ class Cryptography:
                 all_signatures_valid = all_signatures_valid and is_signature_valid
             return all_signatures_valid
 
+        #Check if message is of type QC
         elif hasattr(message, 'ledger_commit_info'):
             signatures = message.signatures
             signers = message.signers
