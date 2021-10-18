@@ -249,7 +249,7 @@ class ValidatorFI (process, Validator):
     def get_failure_config(message, to):
         for failure_config in self.config['failure_config'].failures:
             # only allow SetAttr fail type to last nfaulty validators
-            if failure_config.fail_type == FailType.SetAttr and self.validator_id >= len(self.replicas) - config['nfaulty']:
+            if failure_config.fail_type == FailType.SetAttr and self.validator_id < len(self.replicas) - config['nfaulty']:
                 continue
 
             if failure_config.round != self.pacemaker.current_round:
@@ -295,13 +295,13 @@ class ValidatorFI (process, Validator):
 
             elif failure_config.fail_type == FailType.Delay:
                 LOGGER.log('ValidatorFI.send', 'message delayed')
-                thread = threading.Thread(target=send_msg_delayed, args=(
+                delay_thread = threading.Thread(target=send_msg_delayed, args=(
                     message, to, failure_config.val))
-                thread.start()
+                delay_thread.start()
 
             elif failure_config.fail_type == FailType.SetAttr:
                 LOGGER.log('ValidatorFI.send', 'config changed')
-                setattr(failure_config.attr, failure_config.val)
+                super().setattr(failure_config.attr, failure_config.val)
 
             else:
                 output('error: ValidatorFI.send: unsupported fail type',

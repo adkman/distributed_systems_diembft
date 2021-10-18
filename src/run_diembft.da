@@ -52,17 +52,17 @@ class RunDiemBFT(process):
         start(clients)
 
         await(each(c in clients, has=received(('Done',), from_=c)))
-        output("All clients done, informing all validators.")
+        output("All clients done, informing all validators.", config_id)
         send(('Done',), to=validators)
 
 
 def is_config_valid(config):
     if int(config['nvalidators']) < (3 * int(config['nfaulty']) + 1):
-        output(
+        print(
             "Number of validators should be more than thrice of number of faulty validators.")
         return False
     if (int(config['nfaulty']) > int(config['exclude_size'])) or (int(config['exclude_size']) > 2 * int(config['nfaulty'])):
-        output(
+        print(
             "Exlude size should be between nfaulty and 2*nfaulty")
         return False
     return True
