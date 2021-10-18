@@ -31,6 +31,7 @@ class Ledger:
         LOGGER.log('Ledger: get_state_id: returns', new_state_id)
         return new_state_id
 
+    '''speculate(prev block id, block id, txns) // apply txns speculatively'''
     def speculate(self, prev_block_id, block_id, txns):
         LOGGER.log('Ledger: speculate', prev_block_id, block_id, txns)
         if prev_block_id == None:
@@ -44,6 +45,7 @@ class Ledger:
         state_id = self.get_state_id(prev_block_id, block_id, txns)
         self.block_id_to_state_id[block_id] = state_id
 
+    '''pending state(block id) // find the pending state for the given block id or ⊥ if not present'''
     def pending_state(self, block_id):
         LOGGER.log('Ledger: pending_state', block_id)
         if block_id in self.block_id_to_state_id:
@@ -53,6 +55,7 @@ class Ledger:
         LOGGER.log('Ledger: pending_state: returns', None)
         return None
 
+    '''commit(block id) // commit the pending prefix of the given block id and prune other branches'''
     def commit(self, block_id):
         LOGGER.log('Ledger: commit', block_id)
         if block_id not in self.id_to_block:
@@ -115,6 +118,7 @@ class Ledger:
                         del self.speculate_tree[j]
                 del self.speculate_tree[i]
 
+    '''committed block(block id) // returns a committed block given its id'''
     def committed_block(self, block_id):
         LOGGER.log('Ledger: committed_block', block_id)
         if block_id in self.commited:
