@@ -70,8 +70,11 @@ def is_config_valid(config):
 
 def main():
 
-    shutil.rmtree('../logs/')
-    shutil.rmtree('../ledgers/')
+    if os.path.exists('../logs/') and os.path.isdir('../logs/'):
+        shutil.rmtree('../logs/')
+    
+    if os.path.exists('../ledgers/') and os.path.isdir('../ledgers/'):
+        shutil.rmtree('../ledgers/')
 
     config_id = 0
     for config in configs:
