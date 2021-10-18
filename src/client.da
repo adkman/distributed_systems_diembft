@@ -30,7 +30,8 @@ class Client(process):
         send(('Request', signed_req), to=validators)
         LOGGER.log_event("Sent", "Request", request, validators)
 
-        timer = threading.Timer(config['clienttimeout'], wait_and_retransmit_request, args=(
+        # Wait until clienttimeout
+        timer = threading.Timer(config['clienttimeout'], retransmit_request, args=(
             request, self.pending_success_results, self.f))
         timer.start()
 
@@ -45,6 +46,7 @@ class Client(process):
             }
             send_request(request)
 
+        # Wait until we have received valid (f+1) responses for all its requests
         await(len(received_sufficient_responses) == nops)
 
         send(('Done',), to=parent())
@@ -66,8 +68,9 @@ class Client(process):
                 received_sufficient_responses.add(req_id)
                 LOGGER.log_action("Received f + 1 valid responses", req_id)
 
-    def wait_and_retransmit_request(req, pending_success_results, f):
+    def retransmit_request(req, pending_success_results, f):
         if len(pending_success_results[req['req_id']]) < f + 1:
+            # Retransmit request if did not receive f+1 responses
             LOGGER.log_action("Retransmitting Request", req)
             pending_success_results[req['req_id']].clear()
             send_request(req)
