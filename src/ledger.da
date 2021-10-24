@@ -41,6 +41,7 @@ class Ledger:
             self.speculate_tree[block_id] = []
         elif prev_block_id not in self.speculate_tree:
             print("SPEC ERROR")
+            return
         else:
             self.speculate_tree[prev_block_id].append(block_id)
             self.speculate_tree[block_id] = []
