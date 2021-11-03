@@ -22,7 +22,7 @@ class Ledger:
     # This funtion returns a state_id for a block which is calculated by appending transactions to the state_id of prev_block and hashing the result
     def get_state_id(self, prev_block_id=None, block_id=None, txns=None):
         LOGGER.log('Ledger: get_state_id', prev_block_id, block_id, txns)
-        if prev_block_id == None:
+        if prev_block_id == None or prev_block_id not in self.block_id_to_state_id:
             new_state_id = Cryptography.hash(txns)
             LOGGER.log('Ledger: get_state_id: returns', new_state_id)
             return new_state_id
@@ -40,7 +40,7 @@ class Ledger:
         if prev_block_id == None:
             self.speculate_tree[block_id] = []
         elif prev_block_id not in self.speculate_tree:
-            print("SPEC ERROR")
+            LOGGER.log("Ledger: parent block does not exist", None)
             return
         else:
             self.speculate_tree[prev_block_id].append(block_id)

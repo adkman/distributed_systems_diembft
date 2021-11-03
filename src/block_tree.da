@@ -45,7 +45,7 @@ class BlockTree:
 
             '''pending block tree.add(b)'''
             if block.qc.vote_info.id not in self.id_block or self.id_block[block.qc.vote_info.id] not in self.pending_block_tree:
-                print("Not in the self.pendingtree", block.qc.vote_info.id)
+                # print("Not in the self.pendingtree", block.qc.vote_info.id)
                 LOGGER.log(
                     'BlockTree: execute_and_insert ends without adding anything', block)
                 return
