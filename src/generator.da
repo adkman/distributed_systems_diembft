@@ -1,0 +1,126 @@
+#Generator
+import random
+import os
+
+
+class Generator():
+
+    def __init__(self,number_of_nodes,number_of_twins,number_of_rounds,leader_selection_type,step1_limit,step2_limit,step3_limit,enum_order,round_config_file_name,number_of_partitions):
+    
+        file_name_to_write_to = round_config_file_name
+
+        partitions = self.generate_partitions(number_of_nodes,number_of_twins,number_of_partitions,enum_order,step1_limit)
+
+        # if os.path.exists("partitions"):
+        #     os.remove("partitions")
+        # par = open("partitions",'w')
+        # for i in partitions:
+        #     print(i, file=par)
+
+
+        if leader_selection_type == 'Twins_only':
+            leaders = [i for i in range(number_of_twins)]
+        else:
+            leaders = [i for i in range(number_of_nodes)]
+
+        leader_partitions = self.get_leader_partition_pairs(leaders, partitions, enum_order, step2_limit)
+
+        # if os.path.exists("leader_par"):
+        #     os.remove("leader_par")
+        # lead = open("leader_par",'w')
+        # for i in leader_partitions:
+        #     print(i,file = lead)
+
+        round_config = self.get_round_config(number_of_rounds, leader_partitions, enum_order, step3_limit)
+
+        f = open(file_name_to_write_to,'w')
+        for i in round_config:
+            print(i, file=f)
+
+    def get_leader_partition_pairs(self,leaders,partitions,enum_order,size):
+        leader_partition = list()
+        for leader in leaders:
+            for partition in partitions:
+                leader_partition.append([{"Leader":leader, "partition":partition}])
+        if size > len(leader_partition):
+            size = len(leader_partition)
+        if enum_order == 'deterministic':
+            return leader_partition[0:size]
+        else:
+            return random.sample(leader_partition,size)
+
+    def get_round_config(self,number_of_rounds,leader_partitions,enum_order,size):
+        round_config = list()
+
+        for i in range(number_of_rounds):
+            if len(round_config) == 0:
+                round_config = [[i] for i in leader_partitions] 
+            else:
+                new_list = []
+                for j in range(len(round_config)):
+                    for k in range(len(leader_partitions)):
+                        new_list.append(round_config [j]+[leader_partitions[k]])
+                round_config = new_list
+
+        if size > len(round_config):
+            size = len(round_config)
+        if enum_order == "deterministic":
+            return round_config[0:size]
+        else:
+            return random.sample(round_config , size) 
+
+    def generate_all_subsets(self,nodes , number_of_twins, number_of_partitions):
+        n = len(nodes) - number_of_twins
+        if number_of_partitions == len(nodes):
+            return (tuple([(x, ) for x in nodes ]), )
+        subsets = set()
+        for i in range(len(nodes)):
+            partials = self.generate_all_subsets(nodes[:i] + nodes[i + 1:], number_of_twins, number_of_partitions )
+            for partial in partials:
+                for p in range(len(partial)):
+                    partition = partial[:p] + (partial[p] + (nodes[i], ), ) + partial[p + 1:]
+                    subsets.add(partition)
+        return subsets
+
+    def validate(self,partition, number_of_nodes, number_of_twins):
+        for p in partition:
+            unique_nodes = set()
+            for node in p:
+                unique_nodes.add(node%number_of_nodes)
+            if len(unique_nodes) >= 2*number_of_twins+1:
+                return True
+        return False
+
+    def unique_subsets(self,subsets, number_of_nodes, number_of_twins):
+        u = set()
+        all = set()
+        for x in subsets:
+            t = []
+            for y in x:
+                y = list(y)
+                y.sort()
+                t.append(tuple(y))
+            t.sort()
+            if self.validate(t, number_of_nodes, number_of_twins):
+                u.add(tuple(t))
+                
+        return u
+
+
+    def generate_partitions(self,number_of_nodes, number_of_twins, number_of_partitions, enum_order, sample_size):
+        nodes = [i for i in range(number_of_nodes+number_of_twins)]
+        subsets = self.generate_all_subsets(nodes, number_of_twins, 
+                                        number_of_partitions)
+        all_valid_partitions =  self.unique_subsets(subsets
+                                                , number_of_nodes, number_of_twins)
+
+
+        if sample_size > len(all_valid_partitions):
+            sample_size = len(all_valid_partitions)
+        all_valid_partitions = list(all_valid_partitions)
+        if enum_order == "deterministic":
+            return all_valid_partitions[0:sample_size]
+        else:
+            return random.sample(all_valid_partitions, sample_size)
+
+g = Generator(4,1,4,"all",100,200,123456743,"deterministic","round_configs",2)
