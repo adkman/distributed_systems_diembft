@@ -15,7 +15,7 @@ from safety import Safety
 
 class Validator (process):
 
-    def setup(config, config_id: int, validator_id: int, replicas: list, clients: list, private_key, public_keys_validators, public_keys_clients, round_to_leader, test_executor_id):
+    def setup(config, config_id: int, validator_id: int, replicas: list, clients: list, private_key, public_keys_validators, public_keys_clients, round_to_leader, test_executor_id, uniq_vid):
 
         LOGGER.replicas = replicas
         LOGGER.process_id = "validator_" + str(validator_id)
@@ -29,6 +29,7 @@ class Validator (process):
         self.recently_committed_block_ids = list()
         self.should_start_new_round = True
         self.round_to_leader = round_to_leader
+        self.uniq_vid = uniq_vid
 
         self.ledger = Ledger(
             config_id, validator_id, self.id_block, self.recently_committed_block_ids, self.request_cache)

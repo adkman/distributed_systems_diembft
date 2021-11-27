@@ -81,7 +81,7 @@ class TestExecutor(process):
             print(node)
             vid = i%nvalidators
             setup({node}, (config, config_id, vid, list(validators), list(clients),
-                        private_keys_validators[vid%nvalidators], public_keys_validators, public_keys_clients, round_to_leader, test_executor_id))
+                        private_keys_validators[vid%nvalidators], public_keys_validators, public_keys_clients, round_to_leader, test_executor_id, i))
 
         for i, c in enumerate(clients):
             setup({c}, (config, config_id, i, list(validators),
