@@ -15,6 +15,7 @@ test_generator_configs = [
         # 'enum_order': 'deterministic',
         'enum_order': 'random',
         'number_of_partitions': 2,
-        'liveness_bound': 3
+        'liveness_bound': 3,
+        'maximum_messages_to_drop': 2
     },
 ]
