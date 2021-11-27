@@ -38,8 +38,11 @@ class TestGenerator():
             size = len(leader_partition)
         if enum_order == 'deterministic':
             return leader_partition[0:size]
-        else:
+        elif enum_order == 'random':
             return random.sample(leader_partition,size)
+        else:
+            print("Leader selection type error")
+            sys.exit()
 
     def get_round_config(self,number_of_rounds,leader_partitions,enum_order,size):
         round_config = list()
@@ -115,5 +118,8 @@ class TestGenerator():
         all_valid_partitions = list(all_valid_partitions)
         if enum_order == "deterministic":
             return all_valid_partitions[0:sample_size]
-        else:
+        elif enum_order == 'random':
             return random.sample(all_valid_partitions, sample_size)
+        else:
+            print("Enum type error")
+            sys.exit()
