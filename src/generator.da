@@ -1,9 +1,11 @@
 #Generator
 import random
 import os
+import json
 
 
-class Generator():
+
+class TestGenerator():
 
     def __init__(self,number_of_nodes,number_of_twins,number_of_rounds,leader_selection_type,step1_limit,step2_limit,step3_limit,enum_order,round_config_file_name,number_of_partitions):
     
@@ -34,14 +36,16 @@ class Generator():
         round_config = self.get_round_config(number_of_rounds, leader_partitions, enum_order, step3_limit)
 
         f = open(file_name_to_write_to,'w')
-        for i in round_config:
-            print(i, file=f)
+        json_frmt = json.dumps(round_config,indent=4)
+        print("test_executor_config = ",json_frmt, file = f)
+        # for i in round_config:
+        #     print(i, file=f)
 
     def get_leader_partition_pairs(self,leaders,partitions,enum_order,size):
         leader_partition = list()
         for leader in leaders:
             for partition in partitions:
-                leader_partition.append([{"Leader":leader, "partition":partition}])
+                leader_partition.append({"Leader":leader, "partition":partition})
         if size > len(leader_partition):
             size = len(leader_partition)
         if enum_order == 'deterministic':
@@ -123,4 +127,4 @@ class Generator():
         else:
             return random.sample(all_valid_partitions, sample_size)
 
-g = Generator(4,1,4,"all",100,200,123456743,"deterministic","round_configs",2)
+g = TestGenerator(4,1,4,"all",100,200,100,"deterministic","round_configs.da",2)
