@@ -2,14 +2,17 @@
 import random
 import os
 import json
+import sys
 
 
 
 class TestGenerator():
 
-    def __init__(self,number_of_nodes,number_of_twins,number_of_rounds,leader_selection_type,step1_limit,step2_limit,step3_limit,enum_order,round_config_file_name,number_of_partitions):
+    def __init__(self,number_of_nodes,number_of_twins,number_of_rounds,leader_selection_type,step1_limit,step2_limit,step3_limit,enum_order,file_name,number_of_partitions):
     
-        file_name_to_write_to = round_config_file_name
+        file_name_to_write_to = file_name
+
+        import pandas
 
         partitions = self.generate_partitions(number_of_nodes,number_of_twins,number_of_partitions,enum_order,step1_limit)
 
@@ -20,10 +23,14 @@ class TestGenerator():
         #     print(i, file=par)
 
 
-        if leader_selection_type == 'Twins_only':
+        if leader_selection_type == 'twins_only':
             leaders = [i for i in range(number_of_twins)]
-        else:
+        elif leader_selection_type == 'all':
             leaders = [i for i in range(number_of_nodes)]
+        else:
+            print("Leader selection type error")
+            sys.exit()
+
 
         leader_partitions = self.get_leader_partition_pairs(leaders, partitions, enum_order, step2_limit)
 
@@ -70,8 +77,11 @@ class TestGenerator():
             size = len(round_config)
         if enum_order == "deterministic":
             return round_config[0:size]
-        else:
+        elif enum_order == 'random':
             return random.sample(round_config , size) 
+        else:
+            print("Enum type error")
+            sys.exit()
 
     def generate_all_subsets(self,nodes , number_of_twins, number_of_partitions):
         n = len(nodes) - number_of_twins
@@ -127,4 +137,4 @@ class TestGenerator():
         else:
             return random.sample(all_valid_partitions, sample_size)
 
-g = TestGenerator(4,1,4,"all",100,200,100,"deterministic","round_configs.da",2)
+g = TestGenerator(4,1,4,"dsffsd",100,200,100,"deterministic","round_configs.da",2)
