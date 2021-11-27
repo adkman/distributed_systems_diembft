@@ -2,15 +2,19 @@ import os
 import shutil
 import sys
 
-sys.path.append('../config')
+sys.path.append('../test_generator_config')
+sys.path.append('../test_executor_configs')
 
 from client import Client
-from config import configs
+# from config import configs
+from test_generator_config import test_generator_configs
+from generator import TestGenerator
 from cryptography import Cryptography
 from validator import ValidatorFI
 
+#TODO: Include in a different file?
 
-class RunDiemBFT(process):
+class TestExecutor(process):
 
     def setup(config, config_id):
         self.nvalidators = int(config['nvalidators'])
@@ -70,19 +74,49 @@ def is_config_valid(config):
 
 def main():
 
+    #Read test_generator_config
+    
     if os.path.exists('../logs/') and os.path.isdir('../logs/'):
         shutil.rmtree('../logs/')
 
     if os.path.exists('../ledgers/') and os.path.isdir('../ledgers/'):
         shutil.rmtree('../ledgers/')
 
+    if os.path.exists('../test_executor_configs/') and os.path.isdir('../test_executor_configs/'):
+        shutil.rmtree('../test_executor_configs/')
+
+    os.makedirs('../test_executor_configs/')
+
     config_id = 0
-    for config in configs:
-        if not is_config_valid(config):
-            output("The provided config", config,
-                   "is not valid. Skipping this config.")
-            continue
-        p = new(RunDiemBFT)
-        setup(p, (config, config_id))
-        start(p)
+    for config in test_generator_configs:
+        # if not is_config_valid(config):
+        #     output("The provided config", config,
+        #            "is not valid. Skipping this config.")
+        #     continue
+        TestGenerator(  config['nvalidators'],
+                        config['nfaulty'],
+                        config['nrounds'],
+                        config['leader_selection_type'],
+                        config['step1_limit'],
+                        config['step2_limit'],
+                        config['step3_limit'],
+                        config['enum_order'],
+                        '../test_executor_configs/scenario_'+str(config_id)+".da",
+                        config['number_of_partitions'])
+        # f = open('scenario_'+config_id, 'r'):
+        # lala = '../test_executor_configs/scenario_'+str(config_id)
+        # print("Current working directory: {0}".format(os.getcwd()))
+        lala = "scenario_0"
+        lala = __import__("scenario_0")
+        print("----------")
+        test_executor_config = getattr(lala, "test_executor_config")
+
+        for scenario in test_executor_config:
+            print(scenario)
+            print(scenario[0]['Leader'])
+        # from scenario_0 __import__ test_executor_config
+        # for test_executor_config in 
+        #     p = new(TestExecutor)
+        #     setup(p, (config, config_id))
+        #     start(p)
         config_id += 1
