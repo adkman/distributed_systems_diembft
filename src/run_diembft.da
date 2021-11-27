@@ -154,7 +154,8 @@ def main():
                         config['step3_limit'],
                         config['enum_order'],
                         '../test_executor_configs/scenario_'+str(config_id)+".da",
-                        config['number_of_partitions'])
+                        config['number_of_partitions'],
+                        config['maximum_messages_to_drop'])
         # f = open('scenario_'+config_id, 'r'):
         # lala = '../test_executor_configs/scenario_'+str(config_id)
         # print("Current working directory: {0}".format(os.getcwd()))
