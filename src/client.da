@@ -18,7 +18,7 @@ class Client(process):
         self.pending_success_results = dict()
         self.pending_fail_results = dict()
         self.received_sufficient_responses = set()
-        self.sleep_time = config['sleeptime']
+        # self.sleep_time = config['sleeptime']
         self.nops = config['nclientops']
         self.f = config['nfaulty']
 
