@@ -3,12 +3,23 @@ import random
 import os
 import json
 import sys
-
+import copy
 
 
 class TestGenerator():
 
-    def __init__(self,number_of_nodes,number_of_twins,number_of_rounds,leader_selection_type,step1_limit,step2_limit,step3_limit,enum_order,file_name,number_of_partitions):
+    def __init__(   self,
+                    number_of_nodes,
+                    number_of_twins,
+                    number_of_rounds,
+                    leader_selection_type,
+                    step1_limit,
+                    step2_limit,
+                    step3_limit,
+                    enum_order,
+                    file_name,
+                    number_of_partitions,
+                    maximum_messages_to_drop):
     
         partitions = self.generate_partitions(number_of_nodes,number_of_twins,number_of_partitions,enum_order,step1_limit)
 
@@ -20,13 +31,13 @@ class TestGenerator():
             print("Leader selection type error")
             sys.exit()
 
-
         leader_partitions = self.get_leader_partition_pairs(leaders, partitions, enum_order, step2_limit)
 
         round_config = self.get_round_config(number_of_rounds, leader_partitions, enum_order, step3_limit)
 
+        round_config_with_msg_drops = self.get_round_config_with_msg_drops(round_config, maximum_messages_to_drop)
         f = open(file_name,'w')
-        json_frmt = json.dumps(round_config,indent=4)
+        json_frmt = json.dumps(round_config_with_msg_drops, indent=4)
         print("test_executor_config = ",json_frmt, file = f)
 
     def get_leader_partition_pairs(self,leaders,partitions,enum_order,size):
@@ -54,6 +65,7 @@ class TestGenerator():
                 new_list = []
                 for j in range(len(round_config)):
                     for k in range(len(leader_partitions)):
+                        # new_list.append(copy.deepcopy(round_config[j])+[leader_partitions[k]][:])
                         new_list.append(round_config [j]+[leader_partitions[k]])
                 round_config = new_list
 
@@ -123,3 +135,23 @@ class TestGenerator():
         else:
             print("Enum type error")
             sys.exit()
+
+    def get_round_config_with_msg_drops(self, round_config, maximum_messages_to_drop):
+        msgTypes = ["Proposal", "QC", "Vote", "TimeOut"]
+        for scenario in round_config:
+            print("New scenario")
+            for i, round in enumerate(scenario):
+                msg_drops = []
+                '''Index of msg_drops is the partition number'''
+                scenario[i]['msg_drops'] = msg_drops
+                for partition in scenario[i]['partition']:
+                    number_of_msg_drops = random.randint(0,maximum_messages_to_drop)
+                    msg_drop = []
+                    for i in range(number_of_msg_drops):
+                        msgType = random.choice(msgTypes)
+                        validator = random.choice(partition)
+                        msg_drop.append({'msgType': msgType, 'validator': validator})
+                    msg_drops.append(msg_drop)
+                print(round)
+
+        return round_config

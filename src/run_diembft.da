@@ -102,7 +102,8 @@ def main():
                         config['step3_limit'],
                         config['enum_order'],
                         '../test_executor_configs/scenario_'+str(config_id)+".da",
-                        config['number_of_partitions'])
+                        config['number_of_partitions'],
+                        config['maximum_messages_to_drop'])
         # f = open('scenario_'+config_id, 'r'):
         # lala = '../test_executor_configs/scenario_'+str(config_id)
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -112,8 +113,9 @@ def main():
         test_executor_config = getattr(lala, "test_executor_config")
 
         for scenario in test_executor_config:
-            print(scenario)
-            print(scenario[0]['Leader'])
+            pass
+            # print(scenario)
+            # print(scenario[0]['Leader'])
         # from scenario_0 __import__ test_executor_config
         # for test_executor_config in 
         #     p = new(TestExecutor)
