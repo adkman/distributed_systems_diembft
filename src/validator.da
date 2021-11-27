@@ -39,7 +39,7 @@ class Validator (process):
                              self.ledger, self.blocktree)
         self.pacemaker = Pacemaker(
             validator_id, replicas, self.blocktree, self.safety, config['nfaulty'], config['delta'], send_timeout_msg)
-        self.mempool = MemPool(validator_id)
+        self.mempool = MemPool(uniq_vid)
         # self.leader_election = LeaderElection(
         #     validator_id, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'], round_to_leader)
         self.leader_election = LeaderElection(
@@ -119,24 +119,25 @@ class Validator (process):
         '''if u = LeaderElection.get leader(Pacemaker.current round) then'''
         if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
 
-            # Check if there are any transactions in the MemPool
-            if self.mempool.peek_pool() == 0:
-                self.should_start_new_round = True
-                prev_block = self.id_block[self.blocktree.high_qc.vote_info.id]
-                prev_block_txn_len = len(prev_block.payload)
-                prev_qc = prev_block.qc
-                if prev_qc is not None:
-                    prev_prev_block = self.id_block[prev_qc.vote_info.id]
-                    prev_prev_block_txn_len = len(prev_prev_block.payload)
-                else:
-                    prev_prev_block_txn_len = 0
+            # TODO make sure we don't need this
+            # # Check if there are any transactions in the MemPool
+            # if self.mempool.peek_pool() == 0:
+            #     self.should_start_new_round = True
+            #     prev_block = self.id_block[self.blocktree.high_qc.vote_info.id]
+            #     prev_block_txn_len = len(prev_block.payload)
+            #     prev_qc = prev_block.qc
+            #     if prev_qc is not None:
+            #         prev_prev_block = self.id_block[prev_qc.vote_info.id]
+            #         prev_prev_block_txn_len = len(prev_prev_block.payload)
+            #     else:
+            #         prev_prev_block_txn_len = 0
 
-                # Check if last two parent blocks had empty transactions
-                # No need to process new round with empty blocks anymore
-                if prev_block_txn_len == 0 and prev_prev_block_txn_len == 0:
-                    LOGGER.log(
-                        'Validator: process_new_round_event: returned as no transactions in mempool', last_tc)
-                    return
+            #     # Check if last two parent blocks had empty transactions
+            #     # No need to process new round with empty blocks anymore
+            #     if prev_block_txn_len == 0 and prev_prev_block_txn_len == 0:
+            #         LOGGER.log(
+            #             'Validator: process_new_round_event: returned as no transactions in mempool', last_tc)
+            #         return
 
             '''b ← Block-Tree.generate block( MemPool.get transactions(),
                     Pacemaker.current round )'''
@@ -190,12 +191,12 @@ class Validator (process):
                 LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round, round, replicas[proposal_msg.sender], leader)
                 return
 
-            if p != replicas[validator_id]:
-                # Validate (and remove) the transactions in current mempool with the received txns
-                if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
-                    LOGGER.log(
-                        "Not processing the Proposal message as transactions are not valid", None)
-                    return
+            # if p != replicas[validator_id]:
+            #     # Validate (and remove) the transactions in current mempool with the received txns
+            #     if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
+            #         LOGGER.log(
+            #             "Not processing the Proposal message as transactions are not valid", None)
+            #         return
 
             if len(proposal_msg.block.payload) == 0:
                 self.should_start_new_round = True
@@ -272,27 +273,27 @@ class Validator (process):
         else:
             LOGGER.log_action("Verified TimeoutMsg signature", False)
 
-    def receive(msg=('Request', signed_req), from_=client):
-        req = Cryptography.get_verified_message(
-            signed_req, public_keys_clients[client])
-        LOGGER.log_event("Received", "Request", req, client)
+    # def receive(msg=('Request', signed_req), from_=client):
+    #     req = Cryptography.get_verified_message(
+    #         signed_req, public_keys_clients[client])
+    #     LOGGER.log_event("Received", "Request", req, client)
 
-        if req is not None:
-            if req['req_id'] in self.request_cache:
-                # Directly reply with the cached response
-                response = self.request_cache[req['req_id']]
-                send(('Response', response), to=client)
-                LOGGER.log_event("Sent", "Cached Response", response, client)
-                return
+    #     if req is not None:
+    #         if req['req_id'] in self.request_cache:
+    #             # Directly reply with the cached response
+    #             response = self.request_cache[req['req_id']]
+    #             send(('Response', response), to=client)
+    #             LOGGER.log_event("Sent", "Cached Response", response, client)
+    #             return
 
-            req['client'] = client
-            self.mempool.add_transaction(req)
+    #         req['client'] = client
+    #         self.mempool.add_transaction(req)
 
-            if self.should_start_new_round:
-                process_new_round_event(None)
-                self.should_start_new_round = False
-        else:
-            LOGGER.log_action("Verified Client Request signature", False)
+    #         if self.should_start_new_round:
+    #             process_new_round_event(None)
+    #             self.should_start_new_round = False
+    #     else:
+    #         LOGGER.log_action("Verified Client Request signature", False)
 
 
 class ValidatorFI (process, Validator):
