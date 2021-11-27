@@ -95,18 +95,18 @@ class TestExecutor(process):
         # await(each(c in clients, has=received(('Done',), from_=c)))
         # output("All clients done, informing all validators.", config_id)
         # send(('Done',), to=validators)
-        await(received(('Terminate',), from_=parent()))
-        if parent() == curr_executor:
-            output("Received a Violations, letting all validators know")
-        else:
-            output("Network playground sent Done after completing all rounds, informing all validators")
+        await(received(('Terminate',)))
+        # if p == curr_executor:
+        #     output("Received a Violations, letting all validators know")
+        # else:
+        output("Received terminate, informing all validators and network playground")
         send(('Done',), to=Validators)
 
     def receive(msg=('SafetyViolation', round, commit_tracker), from_=p):
         print("safetyViolation")
         send(('Terminate',), to=curr_executor)
 
-    def receive(msg=('SafetyViolation', round, commit_tracker), from_=p):
+    def receive(msg=('‘Liveness Violation’', round, commit_tracker), from_=p):
         print("‘Liveness Violation’")
         send(('Terminate',), to=curr_executor)
 

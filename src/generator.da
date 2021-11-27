@@ -139,7 +139,7 @@ class TestGenerator():
     def get_round_config_with_msg_drops(self, round_config, maximum_messages_to_drop):
         msgTypes = ["Proposal", "QC", "Vote", "TimeOut"]
         for scenario in round_config:
-            print("New scenario")
+            # print("New scenario")
             for i, round in enumerate(scenario):
                 msg_drops = []
                 '''Index of msg_drops is the partition number'''
@@ -152,6 +152,6 @@ class TestGenerator():
                         validator = random.choice(partition)
                         msg_drop.append({'msgType': msgType, 'validator': validator})
                     msg_drops.append(msg_drop)
-                print(round)
+                # print(round)
 
         return round_config
