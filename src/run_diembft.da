@@ -54,8 +54,11 @@ class TestExecutor(process):
             vid_to_proc[vid].append(node)
             if idx<nvalidators:
                 private_key, public_key = Cryptography.generate_key()
-                private_keys_validators[vid] = private_key
-                public_keys_validators[vid] = public_key
+                private_keys_validators[node] = private_key
+                public_keys_validators[node] = public_key
+            else:
+                private_keys_validators[node] = private_keys_validators[validators[idx%self.nvalidators]]
+                public_keys_validators[node] = public_key[validators[idx%self.nvalidators]]
     
 
         # for v in validators:
