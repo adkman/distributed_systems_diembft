@@ -1,0 +1,136 @@
+#M - (‘MsgType’, msgObj, dests[], round, type)
+
+class NetworkPlayground(process):
+    def setup(scenario, config, proc_to_vid, vid_to_proc, liveness_bound, executor):
+        self.round_config = scenario
+        self.proc_to_vid = proc_to_vid
+        self.vid_to_proc = vid_to_proc
+        self.count_terminal_round_messages = set()
+        self.commit_tracker = dict() # <round, commit_acks[]>
+        self.recent_commit_round = None
+        self.liveness_bound = liveness_bound # liveness property is violated if there is no commit for proposal in liveness_bound number of rounds
+        self.executor = executor
+        self.config = config
+        
+#Event listener: wait for a Message M from src_proc
+    #if M is ‘CommitAck’ then
+        #handle_commit_acks(M)
+
+    # Procedure handle_commit_acks(M)
+    # round ← get_round_from_block(M.committed_block)
+    # if commit_tracker[round] = ∅ then
+    #     commit_tracker[round].add(M)
+    # else
+    #     if is_committed_block_valid(M.committed_block, commit_tracker[round][-1]) then
+    #         commit_tracker[round].add(M)
+    #     else
+    #         send (‘SafetyViolation’, round, commit_tracker[round]) to executer
+    #     end if
+    # end if
+    # if len(commit_tracker[round]) >= 2*number_of_twins + 1 then
+    #     recent_commit_round = round
+    # end if
+
+    def receive(msg=('CommitAck', CommitAck_msg), from_=p):
+        round = CommitAck.round #CHECK THIS (HOW TO ACCESS ROUND FROM THE RECEIVED MESSAGE)
+        if round not in self.commit_tracker:
+            self.commit_tracker[round] = []
+        else:
+            # TODO: define is_commited_block_valid funtion
+            if is_committed_block_valid(M.committed_block, commit_tracker[round][-1]):
+                self.commit_tracker[round].append()
+            else:
+                send(('SafetyViolation', round, self.commit_tracker), to=self.executor)
+
+        if len(self.commit_tracker[round]) >= 2*config['nfaulty']+1:
+            self.recent_commit_round = round
+
+    # TODO: Need to execute this whole handeling of else block
+    def receive(msg=('message', M, ''' all other needed parameters'''), from_=src_proc):
+        self.relay_msg(M,src_proc)
+        if M.round > self.recent_commit_round+self.liveness_bound:
+            send(('Liveness Violation'), to= self.executor)
+
+        if M.round == len(self.round_config):
+            self.count_terminal_round_messages.add(self.proc_to_vid[src_proc])
+            if len(self.count_terminal_round_messages) == self.config['nvalidators']:
+                send(('Terminate'), to=self.executor)
+    # else
+    #     relay_msg(M, src_proc)
+    #     if M.round > recent_commit_round + liveness_bound then
+    #         send ‘LivenessViolation’ to executor
+    #     end if
+       
+    #     // Terminate execution if received message for round r+1 from all nodes
+    #     // r+1 round is same as length of round_config as round starts from 0
+    #     if M.round = |round_config| then 
+    #         count_terminal_round_messages.add(proc_to_vid[src_proc])
+    #         if |count_terminal_round_messages| = number_of_nodes then
+    #             send “Terminate” to executor
+    #         end if
+    #     end if
+    # end if
+
+# Procedure relay_msg(M, src_proc)
+#     current_partitions ← round_config[M.round].partitions
+#     src_partition ← get_partition(current_partitions, src_proc)
+#     for dest_vid in M.dests do // Handles message sent to multiple destinations
+#         dest_procs ← vid_to_proc[dest_vid]
+#         for dest_proc in dest_procs do // Handles msg is sent to twin
+#             dest_partition ← get_partition(current_partitions, dest_proc)
+#             if dest_partition = src_partition and !drop_message(round, src_proc, 
+#                                                                 M.msgType) then
+#                 M.from ← proc_to_vid[src_proc]
+#                 send M to dest_proc
+#            end if
+#         done
+#     done
+
+    def relay_msg(self,M,src_proc):
+        current_partitions = self.round_config[M.round]['partition']
+        src_partition = self.get_partition(current_partitions, src_proc)
+        for dest_vid in M.dests:
+            dest_procs = self.vid_to_proc[dest_vid]
+            for dest_proc in dest_procs:
+                dest_partition = self.get_partition(current_partitions, dest_proc)
+                if dest_partition == src_partition and not(self.drop_message(round, src_proc, M.msgType)):
+                    M.src = proc_to_vid[src_proc]
+                    # TODO: need to align send accordingly 
+                    send((M.type,M), to = dest_proc)
+    # Function get_partition(current_partitions, proc)
+    #     for idx in |current_partitions| do
+    #         if proc in current_partitions[idx] then
+    #             return idx
+    #         end if
+    #     done
+    #     return ⊥
+
+    def get_partition(self, current_partitions, proc):
+        for idx in len(current_partitions):
+            if proc in current_partitions[idx]:
+                return idx
+        
+        return None
+
+
+# TODO: I think we need to modify this
+
+# Function drop_message(round, src_id, msgType)
+#     for failure_config in failure_config[round] do
+#         if failure_config.msgType != WILDCARD and
+#                                         failure_config.msgType != msgType then
+#             continue
+#         end if
+#         if failure_config.src != WILDCARD and failure_config.src != src_id then
+#             continue
+#         end if
+#         return True
+#     done
+#     return False
+
+    def drop_message(self, round, src_proc, msgType):
+        
+        # TODO: 
+        # check condition and return True or False 
+
+        return False
