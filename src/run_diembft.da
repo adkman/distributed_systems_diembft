@@ -69,8 +69,8 @@ class TestExecutor(process):
             public_keys_clients[c] = public_key
 
         #NETWORK PLAYGROUND
-        # network_playground = NetworkPlayground(round_config , failure_config, 
-        #                         proc_to_vid, vid_to_proc, liveness_bound)
+        # network_playground = NetworkPlayground(self.round_config , config, 
+        #                         proc_to_vid, vid_to_proc, liveness_bound, curr_executor)
 
 
         # for i, v in enumerate(validators):
