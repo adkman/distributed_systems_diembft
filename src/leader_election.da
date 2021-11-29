@@ -23,7 +23,7 @@ class LeaderElection:
 
     '''Function get leader(round)'''
     def get_leader(self, round):
-        return self.round_to_leader[round]
+        return self.round_to_leader[round-2]
         # LOGGER.log('LeaderElection: get_leader', round)
         # '''if <round, leader> ∈ reputation leaders then'''
         # if round in self.reputation_leaders:

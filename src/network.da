@@ -86,7 +86,7 @@ class NetworkPlayground(process):
 #         done
 #     done
 
-    def relay_msg(self,M,src_proc):
+    def relay_msg(M,src_proc):
         current_partitions = self.round_config[M.round]['partition']
         src_partition = self.get_partition(current_partitions, src_proc)
         for dest_vid in M.dests:
@@ -105,7 +105,7 @@ class NetworkPlayground(process):
     #     done
     #     return ⊥
 
-    def get_partition(self, current_partitions, proc):
+    def get_partition(current_partitions, proc):
         for idx in len(current_partitions):
             if proc in current_partitions[idx]:
                 return idx
@@ -128,7 +128,7 @@ class NetworkPlayground(process):
 #     done
 #     return False
 
-    def drop_message(self, round, src_proc, msgType):
+    def drop_message(round, src_proc, msgType):
         
         # TODO: 
         # check condition and return True or False 

@@ -41,8 +41,16 @@ class TestExecutor(process):
         proc_to_vid = {}
         vid_to_proc = DefaultDict(list)
 
-        os.makedirs('../logs/config' + str(config_id) + "/" + str(test_executor_id))
-        os.makedirs('../ledgers/config' + str(config_id) + "/" + str(test_executor_id))
+        log_path = '../logs/config' + str(config_id) + "/" + str(test_executor_id)
+        ledger_path = '../ledgers/config' + str(config_id) + "/" + str(test_executor_id)
+
+        # if os.path.exists(log_path):# and os.path.isdir(log_path):
+        shutil.rmtree(log_path, ignore_errors=True)
+        # if os.path.exists(ledger_path):# and os.path.isdir(ledger_path):
+        shutil.rmtree(ledger_path, ignore_errors=True)
+
+        os.makedirs(ledger_path)
+        os.makedirs(log_path)
 
         validators = list(new(Validator, num=(nvalidators+nfaulty)))
         clients = new(Client, num=nclients)
@@ -63,10 +71,10 @@ class TestExecutor(process):
         #     private_keys_validators[v] = private_key
         #     public_keys_validators[v] = public_key
 
-        for c in clients:
-            private_key, public_key = Cryptography.generate_key()
-            private_keys_clients[c] = private_key
-            public_keys_clients[c] = public_key
+        # for c in clients:
+        #     private_key, public_key = Cryptography.generate_key()
+        #     private_keys_clients[c] = private_key
+        #     public_keys_clients[c] = public_key
 
         #NETWORK PLAYGROUND
         # network_playground = NetworkPlayground(self.round_config , config, 
@@ -81,14 +89,14 @@ class TestExecutor(process):
             print(node)
             vid = i%nvalidators
             setup({node}, (config, config_id, vid, list(validators), list(clients),
-                        private_keys_validators[vid%nvalidators], public_keys_validators, public_keys_clients, round_to_leader, test_executor_id, i))
+                        private_keys_validators[vid%nvalidators], public_keys_validators, public_keys_clients, round_to_leader, test_executor_id, i, proc_to_vid, vid_to_proc))
 
-        for i, c in enumerate(clients):
-            setup({c}, (config, config_id, i, list(validators),
-                        private_keys_clients[c], public_keys_validators))
+        # for i, c in enumerate(clients):
+        #     setup({c}, (config, config_id, i, list(validators),
+        #                 private_keys_clients[c], public_keys_validators))
 
         start(validators)
-        start(clients)
+        # start(clients)
 
         # start(network_playground)
 
@@ -128,14 +136,15 @@ def main():
 
     #Read test_generator_config
     
-    if os.path.exists('../logs/') and os.path.isdir('../logs/'):
-        shutil.rmtree('../logs/')
 
-    if os.path.exists('../ledgers/') and os.path.isdir('../ledgers/'):
-        shutil.rmtree('../ledgers/')
+    # if os.path.exists('../logs/'):# and os.path.isdir('../logs/'):
+    shutil.rmtree('../logs/', ignore_errors=True)
+
+    # if os.path.exists('../ledgers/'):# and os.path.isdir('../ledgers/'):
+    shutil.rmtree('../ledgers/', ignore_errors=True)
 
     if os.path.exists('../test_executor_configs/') and os.path.isdir('../test_executor_configs/'):
-        shutil.rmtree('../test_executor_configs/')
+        shutil.rmtree('../test_executor_configs/', ignore_errors=True)
 
     os.makedirs('../test_executor_configs/')
 

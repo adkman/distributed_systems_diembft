@@ -1,6 +1,7 @@
 import random
 import threading
 import time
+import sys
 
 from block_tree import BlockTree
 from cryptography import Cryptography
@@ -12,17 +13,33 @@ from object_types import FailType, MsgType, ProposalMsg
 from pacemaker import Pacemaker
 from safety import Safety
 
-
 class Validator (process):
 
-    def setup(config, config_id: int, validator_id: int, replicas: list, clients: list, private_key, public_keys_validators, public_keys_clients, round_to_leader, test_executor_id, uniq_vid):
+    def setup(  config,
+                 config_id: int,
+                 validator_id: int,
+                 replicas: list,
+                 clients: list,
+                 private_key,
+                 public_keys_validators,
+                 public_keys_clients,
+                 round_to_leader,
+                 test_executor_id,
+                 uniq_vid,
+                 proc_to_vid,
+                 vid_to_proc):
 
         LOGGER.replicas = replicas
         LOGGER.process_id = "validator_" + str(validator_id)
         LOGGER.clients = clients
         LOGGER.filename = '../logs/config' + str(config_id) + '/' + str(test_executor_id) + '/' \
-            + LOGGER.process_id + ".log"
+            + "validator_" + str(uniq_vid) #+ ".log"
         
+        if uniq_vid > validator_id:
+            LOGGER.filename += "_TwinOf_" + str(validator_id)
+
+        LOGGER.filename += ".log"
+
         LOGGER.log_action("Initial configuration", config)
         self.id_block = dict()
         self.request_cache = dict()
@@ -30,9 +47,9 @@ class Validator (process):
         self.should_start_new_round = True
         self.round_to_leader = round_to_leader
         self.uniq_vid = uniq_vid
-
+        self.proc_to_vid = proc_to_vid
         self.ledger = Ledger(
-            config_id, validator_id, self.id_block, self.recently_committed_block_ids, self.request_cache)
+            config_id, validator_id, self.id_block, self.recently_committed_block_ids, self.request_cache, test_executor_id, uniq_vid)
         self.blocktree = BlockTree(
             validator_id, replicas, self.ledger, config['nfaulty'], self.id_block)
         self.safety = Safety(validator_id, replicas,
@@ -45,7 +62,9 @@ class Validator (process):
         self.leader_election = LeaderElection(
             validator_id, replicas, round_to_leader)
 
+        self.proposal_msgs_cache = [] #round number is the index
         Cryptography.private_key = self.private_key
+        Cryptography.proc_to_vid = self.proc_to_vid
         Cryptography.replicas = self.replicas
         Cryptography.public_keys_validators = self.public_keys_validators
 
@@ -70,6 +89,8 @@ class Validator (process):
     # Broadcast the timeout message
     def send_timeout_msg(timeout_msg):
         LOGGER.log('Validator: send_timeout_message', timeout_msg)
+        # if self.pacemaker.current_round > len(round_to_leader):
+        #     sys.exit()
         send(('Timeout', timeout_msg), to=self.replicas)
         LOGGER.log_event('Sent', 'Timeout', timeout_msg, self.replicas)
 
@@ -77,6 +98,7 @@ class Validator (process):
     def run():
         self.pacemaker.start_timer(1)
         LOGGER.log(replicas[validator_id])
+        # process_new_round_event(None)
         await(received(('Done',), from_=parent()))
         self.pacemaker.stop_timer(self.pacemaker.current_round)
         output("Validator", self.validator_id, "is exiting")
@@ -99,13 +121,14 @@ class Validator (process):
                         'req_id': request_id,
                         'resp_status': "success"
                     }
-                    send(('Response', resp), to=txn['client'])
-                    LOGGER.log_event("Sent", "Response", resp, txn['client'])
+                    #TODO: Confirm what to do with response
+                    # send(('Response', resp), to=txn['client'])
+                    # LOGGER.log_event("Sent", "Response", resp, txn['client'])
                     self.request_cache[request_id] = resp
             self.recently_committed_block_ids.clear()
 
         '''LeaderElection.update leaders(qc)'''
-        self.leader_election.update_leaders(qc)
+        # self.leader_election.update_leaders(qc)
 
         '''Pacemaker.advance round(qc.vote info.round)'''
         self.pacemaker.advance_round_qc(qc)
@@ -117,7 +140,8 @@ class Validator (process):
         LOGGER.log('Validator: process_new_round_event', last_tc)
 
         '''if u = LeaderElection.get leader(Pacemaker.current round) then'''
-        if self.replicas[validator_id] == self.leader_election.get_leader(self.pacemaker.current_round):
+        #TODO: Handle for TWIN
+        if proc_to_vid[self.replicas[validator_id]] == self.leader_election.get_leader(self.pacemaker.current_round):
 
             # TODO make sure we don't need this
             # # Check if there are any transactions in the MemPool
@@ -163,14 +187,18 @@ class Validator (process):
         LOGGER.log_event("Received", "Proposal", proposal_msg, p)
 
         signature_verified = Cryptography.get_verified_message(
-            proposal_msg.signature, public_keys_validators[p])
+            proposal_msg.signature, public_keys_validators[proc_to_vid[p]])
 
         if signature_verified is not None:
             LOGGER.log_action("Verified ProposalMsg signature", True)
 
+
+            '''Add proposal message to cache, that is used for sync up'''
+            proposal_msgs_cache.append(proposal_msg)
+
             self.should_start_new_round = False
 
-            if proposal_msg.block.qc is not None and p != replicas[validator_id]:
+            if proposal_msg.block.qc is not None and proc_to_vid[p] != proc_to_vid[replicas[validator_id]]:
                 '''process certificate qc(P.block.qc)'''
                 process_certificate_qc(proposal_msg.block.qc)
 
@@ -187,7 +215,8 @@ class Validator (process):
             leader = self.leader_election.get_leader(round)
             '''if P.block.round 6= round ∨ P.sender 6= leader ∨ P.block.author 6= leader then
                     return'''
-            if proposal_msg.block.round != round or replicas[proposal_msg.sender] != leader or replicas[proposal_msg.block.author] != leader:
+            # print("In Proposal, Leader is ", leader)
+            if proposal_msg.block.round != round or proc_to_vid[replicas[proposal_msg.sender]] != leader or proc_to_vid[replicas[proposal_msg.block.author]] != leader:
                 LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round, round, replicas[proposal_msg.sender], leader)
                 return
 
@@ -213,7 +242,7 @@ class Validator (process):
             if vote_msg is not None:
                 next_leader = self.leader_election.get_leader(round + 1)
                 send(('Vote', vote_msg),
-                     to=next_leader)
+                     to=vid_to_proc[next_leader])
                 LOGGER.log_event("Sent", "Vote", vote_msg, next_leader)
 
         else:
@@ -224,7 +253,7 @@ class Validator (process):
         LOGGER.log_event("Received", "Vote", vote_msg, p)
 
         signature_verified = Cryptography.get_verified_message(
-            vote_msg.signature, public_keys_validators[p])
+            vote_msg.signature, public_keys_validators[proc_to_vid[p]])
 
         if signature_verified is not None:
             LOGGER.log_action("Verified VoteMsg signature", True)
@@ -248,7 +277,9 @@ class Validator (process):
         LOGGER.log_event("Received", "Timeout", timeout_msg, p)
 
         signature_verified = Cryptography.get_verified_message(
-            timeout_msg.tmo_info.author_signature, public_keys_validators[p])
+            timeout_msg.tmo_info.author_signature, public_keys_validators[proc_to_vid[p]])
+        # signature_verified = Cryptography.get_verified_message(
+        #     timeout_msg.tmo_info.author_signature, public_keys_validators[p])
 
         if signature_verified is not None:
             LOGGER.log_action("Verified TimeoutMsg signature", True)
@@ -265,6 +296,7 @@ class Validator (process):
             tc = self.pacemaker.process_remote_timeout(timeout_msg)
             '''if tc != ⊥ then'''
             if tc is not None:
+                # print("TC IS ", todict(tc))
                 LOGGER.log_action("Generated a Timeout Certificate", tc)
                 '''process certificate qc(qc)
                 process new round event(⊥)'''

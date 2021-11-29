@@ -4,7 +4,14 @@ from logger_util import LOGGER
 
 class Ledger:
 
-    def __init__(self, config_id, validator_id, id_block, recently_committed_block_ids, request_cache):
+    def __init__(self,
+                 config_id,
+                 validator_id,
+                 id_block,
+                 recently_committed_block_ids,
+                 request_cache,
+                 test_executor_id,
+                 uniq_vid):
         self.validator_id = validator_id
         self.config_id = config_id
         self.state_id = 0
@@ -14,9 +21,13 @@ class Ledger:
         self.commited = dict()
         self.id_to_block = id_block
         self.request_cache = request_cache
-        self.filename = "validator_" + str(validator_id) + ".ledger"
+        self.test_executor_id = test_executor_id
+        self.filename = "validator_" + str(uniq_vid)# + ".ledger"
+        if uniq_vid > validator_id:
+            self.filename += "_TwinOf_" + str(validator_id)
+        self.filename += ".ledger"
         fp = open('../ledgers/config' + str(config_id) +
-                  "/" + self.filename, 'w')
+                  "/"  + str(test_executor_id) + '/' + self.filename, 'w')
         fp.close()
 
     # This funtion returns a state_id for a block which is calculated by appending transactions to the state_id of prev_block and hashing the result
@@ -85,7 +96,7 @@ class Ledger:
             current_block_to_commit = self.id_to_block[current_block_to_commit.qc.vote_info.id]
 
         fp = open('../ledgers/config' + str(self.config_id) +
-                  "/" + self.filename, 'a+')
+                  "/" + str(self.test_executor_id) + '/' + self.filename, 'a+')
         while(stack):
             block_id, payload = stack.pop()
             self.commited[block_id] = payload

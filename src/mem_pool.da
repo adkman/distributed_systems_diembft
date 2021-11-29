@@ -34,7 +34,8 @@ class MemPool:
         # send_txns = [self.pending_txns[keys[0]]]
         # del self.pending_txns[keys[0]]
         txn = {
-            'command': str(self.uniq_vid) + "-" + str(self.txn_id)
+            'command': str(self.uniq_vid) + "-" + str(self.txn_id),
+            'req_id': str(self.uniq_vid) + "-" + str(self.txn_id)
         }
         self.txn_id = self.txn_id + 1
 
