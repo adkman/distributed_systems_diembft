@@ -21,6 +21,7 @@ class Client(process):
         self.sleep_time = config['sleeptime']
         self.nops = config['nclientops']
         self.f = config['nfaulty']
+        
 
         Cryptography.private_key = self.private_key
 
@@ -59,12 +60,12 @@ class Client(process):
         resp_status = resp['resp_status']
         if resp_status == "success":
             pending_success_results[req_id].append(resp)
-            if len(pending_success_results[req_id]) == self.f + 1:
+            if len(pending_success_results[req_id]) == 3*self.f + 1:
                 received_sufficient_responses.add(req_id)
                 LOGGER.log_action("Received f + 1 valid responses", req_id)
         else:
             pending_fail_results[req_id].append(resp)
-            if len(pending_fail_results[req_id]) == self.f + 1:
+            if len(pending_fail_results[req_id]) == 3*self.f + 1:
                 received_sufficient_responses.add(req_id)
                 LOGGER.log_action("Received f + 1 valid responses", req_id)
 
@@ -74,3 +75,4 @@ class Client(process):
             LOGGER.log_action("Retransmitting Request", req)
             pending_success_results[req['req_id']].clear()
             send_request(req)
+ 

@@ -11,7 +11,7 @@ from mem_pool import MemPool
 from object_types import FailType, MsgType, ProposalMsg
 from pacemaker import Pacemaker
 from safety import Safety
-
+from utils import todict
 
 class Validator (process):
 
@@ -29,6 +29,8 @@ class Validator (process):
         self.request_cache = dict()
         self.recently_committed_block_ids = list()
         self.should_start_new_round = True
+        self.proposal_msg_cache = dict()
+        self.missed_pops = []
 
         self.ledger = Ledger(
             config_id, validator_id, self.id_block, self.recently_committed_block_ids, self.request_cache)
@@ -41,6 +43,7 @@ class Validator (process):
         self.mempool = MemPool(validator_id)
         self.leader_election = LeaderElection(
             validator_id, replicas, self.ledger, self.pacemaker, config['window_size'], config['exclude_size'])
+        self.syncingup = False
 
         Cryptography.private_key = self.private_key
         Cryptography.replicas = self.replicas
@@ -154,64 +157,98 @@ class Validator (process):
 
     '''Procedure process proposal msg(P)'''
     def receive(msg=('Proposal', proposal_msg), from_=p):
-        LOGGER.log_event("Received", "Proposal", proposal_msg, p)
+        if self.syncingup == False:
 
-        signature_verified = Cryptography.get_verified_message(
-            proposal_msg.signature, public_keys_validators[p])
+            LOGGER.log_event("Received", "Proposal", proposal_msg, p)
 
-        if signature_verified is not None:
-            LOGGER.log_action("Verified ProposalMsg signature", True)
+            signature_verified = Cryptography.get_verified_message(
+                proposal_msg.signature, public_keys_validators[p])
 
-            self.should_start_new_round = False
+            if (validator_id==1 ) and (proposal_msg.block.round>=3 and proposal_msg.block.round<=7):
+                pass
+            else:
+        
+                if signature_verified is not None:
+                    LOGGER.log_action("Verified ProposalMsg signature", True)
 
-            if proposal_msg.block.qc is not None and p != replicas[validator_id]:
-                '''process certificate qc(P.block.qc)'''
-                process_certificate_qc(proposal_msg.block.qc)
+                    if self.pacemaker.current_round < proposal_msg.block.round-1:
+                        self.syncingup = True
+                        # print("proposal_msg.sender",proposal_msg.sender, self, validator_id)
+                        print(validator_id, "Asking sync_up", proposal_msg.sender, proposal_msg.block.round)
+                        send(('sync_up', self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
+                        # await(received(('sync_up done',), from_=self))
+                        await(self.pacemaker.current_round == proposal_msg.block.round-1)
+                        print("sync_up done from sync_up")
+                        # if len(self.missed_pops) > 0:
+                        #     # TODO: have deepcopy of this
+                        #     k = self.missed_pops[:]
 
-            if proposal_msg.high_commit_qc is not None:
-                '''process certificate qc(P.high commit qc)'''
-                process_certificate_qc(proposal_msg.high_commit_qc)
+                        #     self.missed_pops.clear()
+                        #     for prop in k:
+                        #         send(('blocks_to_sync_up',[prop], ), to=self)
+                            
+                        self.syncingup = False
+                        
+                    self.should_start_new_round = False
 
-            '''Pacemaker.advance round tc(P.last round tc)'''
-            self.pacemaker.advance_round_tc(proposal_msg.last_round_tc)
+                    if proposal_msg.block.qc is not None and p != replicas[validator_id]:
+                        '''process certificate qc(P.block.qc)'''
+                        process_certificate_qc(proposal_msg.block.qc)
 
-            '''round ← Pacemaker.current round'''
-            round = self.pacemaker.current_round
-            '''leader ← LeaderElection.get leader(current round)'''
-            leader = self.leader_election.get_leader(round)
-            '''if P.block.round 6= round ∨ P.sender 6= leader ∨ P.block.author 6= leader then
-                    return'''
-            if proposal_msg.block.round != round or replicas[proposal_msg.sender] != leader or replicas[proposal_msg.block.author] != leader:
-                LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round, round, replicas[proposal_msg.sender], leader)
-                return
+                    if proposal_msg.high_commit_qc is not None:
+                        '''process certificate qc(P.high commit qc)'''
+                        process_certificate_qc(proposal_msg.high_commit_qc)
 
-            if p != replicas[validator_id]:
-                # Validate (and remove) the transactions in current mempool with the received txns
-                if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
-                    LOGGER.log(
-                        "Not processing the Proposal message as transactions are not valid", None)
-                    return
+                    '''Pacemaker.advance round tc(P.last round tc)'''
+                    self.pacemaker.advance_round_tc(proposal_msg.last_round_tc)
 
-            if len(proposal_msg.block.payload) == 0:
-                self.should_start_new_round = True
+                    # print("current round and proposal message blocks round",self.pacemaker.current_round, proposal_msg.block.round)
+                    # if self.pacemaker.current_round < proposal_msg.block.round:
+                    #     print("proposal_msg.sender",proposal_msg.sender)
+                    #     send(('sync_up',self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
+                    
+                            
+                    self.proposal_msg_cache[proposal_msg.block.round] = proposal_msg
 
-            '''Block-Tree.execute and insert(P) // Adds a new speculative state to the Ledger'''
-            self.blocktree.execute_and_insert(proposal_msg.block)
+                    '''round ← Pacemaker.current round'''
+                    round = self.pacemaker.current_round
+                    '''leader ← LeaderElection.get leader(current round)'''
+                    leader = self.leader_election.get_leader(round)
+                    '''if P.block.round 6= round ∨ P.sender 6= leader ∨ P.block.author 6= leader then
+                            return'''
+                    if proposal_msg.block.round != round or replicas[proposal_msg.sender] != leader or replicas[proposal_msg.block.author] != leader:
+                        LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round, round, replicas[proposal_msg.sender], leader)
+                        return
 
-            '''vote msg ← Safety.make vote(P.block, P.last round tc)'''
-            vote_msg = self.safety.make_vote(
-                proposal_msg.block, proposal_msg.last_round_tc)
+                    if p != replicas[validator_id]:
+                        # Validate (and remove) the transactions in current mempool with the received txns
+                        if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
+                            LOGGER.log(
+                                "Not processing the Proposal message as transactions are not valid", None)
+                            return
 
-            '''if vote msg != ⊥ then
-                    send vote msg to LeaderElection.get leader(current round + 1)'''
-            if vote_msg is not None:
-                next_leader = self.leader_election.get_leader(round + 1)
-                send(('Vote', vote_msg),
-                     to=next_leader)
-                LOGGER.log_event("Sent", "Vote", vote_msg, next_leader)
+                    if len(proposal_msg.block.payload) == 0:
+                        self.should_start_new_round = True
 
+                    '''Block-Tree.execute and insert(P) // Adds a new speculative state to the Ledger'''
+                    self.blocktree.execute_and_insert(proposal_msg.block)
+
+                    '''vote msg ← Safety.make vote(P.block, P.last round tc)'''
+                    vote_msg = self.safety.make_vote(
+                        proposal_msg.block, proposal_msg.last_round_tc)
+
+                    '''if vote msg != ⊥ then
+                            send vote msg to LeaderElection.get leader(current round + 1)'''
+                    if vote_msg is not None:
+                        next_leader = self.leader_election.get_leader(round + 1)
+                        send(('Vote', vote_msg),
+                            to=next_leader)
+                        LOGGER.log_event("Sent", "Vote", vote_msg, next_leader)
+
+                else:
+                    LOGGER.log_action("Verified ProposalMsg signature", False)
         else:
-            LOGGER.log_action("Verified ProposalMsg signature", False)
+            self.missed_pops.append(proposal_msg)
 
     '''Procedure process vote msg(M)'''
     def receive(msg=('Vote', vote_msg), from_=p):
@@ -288,6 +325,79 @@ class Validator (process):
                 self.should_start_new_round = False
         else:
             LOGGER.log_action("Verified Client Request signature", False)
+
+    def receive(msg=('sync_up', round, prop_mesg), from_=p):
+        blocks_to_send = []
+        # TODO: self.pace.cur_round
+        # print("current round and proposal message blocks round",self.pacemaker.current_round, prop_mesg.block.round)
+        for i in range(round,prop_mesg.block.round):
+            send(('blocks_to_sync_up',[self.proposal_msg_cache[i]], ), to=p)
+            time.sleep(1)
+            # TODO: time.sleep
+            # blocks_to_send.append(self.proposal_msg_cache[i])
+            # send(('blocks_to_sync_up', self.proposal_msg_cache[i]), to=p)
+
+        # send(('blocks_to_sync_up',blocks_to_send, ), to=p)
+
+        # send(('sent', ), to=p)
+
+    def receive(msg=('blocks_to_sync_up', prop_msg_blocks), from_=p):
+        print("Starting sync up")
+
+        print(len(prop_msg_blocks))
+        for proposal_msg in prop_msg_blocks:
+            # print("prop messages are:",todict(proposal_msg))
+
+            if proposal_msg.block.qc is not None and p != replicas[validator_id]:
+                    '''process certificate qc(P.block.qc)'''
+                    process_certificate_qc(proposal_msg.block.qc)
+
+            if proposal_msg.high_commit_qc is not None:
+                '''process certificate qc(P.high commit qc)'''
+                process_certificate_qc(proposal_msg.high_commit_qc)
+
+            '''Pacemaker.advance round tc(P.last round tc)'''
+            self.pacemaker.advance_round_tc(proposal_msg.last_round_tc)
+
+            # print("current round and proposal message blocks round",self.pacemaker.current_round, proposal_msg.block.round)
+            # if self.pacemaker.current_round < proposal_msg.block.round:
+            #     print("proposal_msg.sender",proposal_msg.sender)
+            #     send(('sync_up',self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
+            
+                    
+            self.proposal_msg_cache[proposal_msg.block.round] = proposal_msg
+
+            '''round ← Pacemaker.current round'''
+            round = self.pacemaker.current_round
+            '''leader ← LeaderElection.get leader(current round)'''
+            leader = self.leader_election.get_leader(round)
+            '''if P.block.round 6= round ∨ P.sender 6= leader ∨ P.block.author 6= leader then
+                    return'''
+            if proposal_msg.block.round != round or replicas[proposal_msg.sender] != leader or replicas[proposal_msg.block.author] != leader:
+                LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round, round, replicas[proposal_msg.sender], leader)
+                return
+
+
+            # if p != replicas[validator_id]:
+            #     # Validate (and remove) the transactions in current mempool with the received txns
+            #     if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
+            #         LOGGER.log(
+            #             "Not processing the Proposal message as transactions are not valid", None)
+            #         return
+
+            if len(proposal_msg.block.payload) == 0:
+                self.should_start_new_round = True
+
+            '''Block-Tree.execute and insert(P) // Adds a new speculative state to the Ledger'''
+            self.blocktree.execute_and_insert(proposal_msg.block)
+
+        print("DONE")
+
+        # print("SYNCUP DONE")
+
+        # send(('sync_up done', ), to=self)
+
+    # TODO: Handle missed proposal
 
 
 class ValidatorFI (process, Validator):
