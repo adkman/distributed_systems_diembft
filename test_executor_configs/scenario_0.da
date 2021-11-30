@@ -1,86 +1,6 @@
 test_executor_config =  [
     [
         {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
             "Leader": 2,
             "partition": [
                 [
@@ -91,6 +11,15 @@ test_executor_config =  [
                 [
                     3
                 ]
+            ],
+            "msg_drops": [
+                [
+                    {
+                        "msgType": "TimeOut",
+                        "validator": 2
+                    }
+                ],
+                []
             ]
         },
         {
@@ -104,345 +33,15 @@ test_executor_config =  [
                     2,
                     3
                 ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 0,
-            "partition": [
+            ],
+            "msg_drops": [
                 [
-                    0,
-                    1,
-                    2
+                    {
+                        "msgType": "Vote",
+                        "validator": 0
+                    }
                 ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0
-                ],
-                [
-                    1,
-                    2,
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 0,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 2,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2
-                ],
-                [
-                    3
-                ]
+                []
             ]
         },
         {
@@ -456,19 +55,32 @@ test_executor_config =  [
                     2,
                     3
                 ]
+            ],
+            "msg_drops": [
+                [
+                    {
+                        "msgType": "Vote",
+                        "validator": 0
+                    }
+                ],
+                []
             ]
         },
         {
             "Leader": 1,
             "partition": [
                 [
-                    0,
-                    1,
-                    2
+                    0
                 ],
                 [
+                    1,
+                    2,
                     3
                 ]
+            ],
+            "msg_drops": [
+                [],
+                []
             ]
         },
         {
@@ -482,21 +94,15 @@ test_executor_config =  [
                 [
                     3
                 ]
-            ]
-        }
-    ],
-    [
-        {
-            "Leader": 1,
-            "partition": [
+            ],
+            "msg_drops": [
                 [
-                    0,
-                    1,
-                    2
+                    {
+                        "msgType": "TimeOut",
+                        "validator": 2
+                    }
                 ],
-                [
-                    3
-                ]
+                []
             ]
         },
         {
@@ -510,32 +116,41 @@ test_executor_config =  [
                     2,
                     3
                 ]
+            ],
+            "msg_drops": [
+                [
+                    {
+                        "msgType": "QC",
+                        "validator": 0
+                    },
+                    {
+                        "msgType": "QC",
+                        "validator": 0
+                    }
+                ],
+                []
             ]
         },
         {
-            "Leader": 2,
+            "Leader": 0,
             "partition": [
                 [
-                    0,
-                    1,
-                    2
+                    0
                 ],
                 [
-                    3
-                ]
-            ]
-        },
-        {
-            "Leader": 1,
-            "partition": [
-                [
-                    0,
                     1,
-                    2
-                ],
-                [
+                    2,
                     3
                 ]
+            ],
+            "msg_drops": [
+                [
+                    {
+                        "msgType": "Vote",
+                        "validator": 0
+                    }
+                ],
+                []
             ]
         }
     ]
