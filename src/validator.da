@@ -172,16 +172,20 @@ class Validator (process):
             self.recently_received_proposal = proposal_msg
 
             if self.syncingup==False:
-                if not((validator_id==2 ) and (proposal_msg.block.round>=3 and proposal_msg.block.round<=7)):
+                if not((validator_id==3 ) and (proposal_msg.block.round>=3 and proposal_msg.block.round<=7)):
                     if self.pacemaker.current_round < proposal_msg.block.round-1:
                         self.syncingup = True
                         sync_up_proposal_msg(proposal_msg)
 
                         
                     self.should_start_new_round = False
-
+                    
+                    if validator_id==3:
+                        print("proposal_msg.block.round",proposal_msg.block.round)
+                        print("After sync", self.pacemaker.current_round)
                     process_proposal_message(proposal_msg, p)
-
+                    if validator_id==3:
+                        print("After processing proposal", self.pacemaker.current_round)
                     self.syncingup = False
 
 
@@ -199,13 +203,15 @@ class Validator (process):
                             to=next_leader)
                         LOGGER.log_event("Sent", "Vote", vote_msg, next_leader)
 
-                    while self.pacemaker.current_round < self.recently_received_proposal.block.round:
+                    while self.pacemaker.current_round < self.recently_received_proposal.block.round-1:
                         proposal_msg = self.recently_received_proposal
                         self.syncingup = True
                         sync_up_proposal_msg(proposal_msg)
                         self.should_start_new_round = False
                         process_proposal_message(proposal_msg, p)
                         self.syncingup = False
+
+                    # process_proposal_message(proposal_msg, p)
 
         else:
             LOGGER.log_action("Verified ProposalMsg signature", False)
@@ -244,9 +250,10 @@ class Validator (process):
     def receive(msg=('Timeout', timeout_msg), from_=p):
         LOGGER.log_event("Received", "Timeout", timeout_msg, p)
 
-        print("vote is for",timeout_msg.tmo_info.round, "current leader round is", self.pacemaker.current_round, "From", self.replicas.index(p) )
+        # print("vote is for",timeout_msg.tmo_info.round, "current leader round is", self.pacemaker.current_round, "From", self.replicas.index(p) )
 
         if not(self.pacemaker.current_round == timeout_msg.tmo_info.round):
+
             return
 
         signature_verified = Cryptography.get_verified_message(
@@ -302,13 +309,19 @@ class Validator (process):
         # TODO: self.pace.cur_round
         # print("current round and proposal message blocks round",self.pacemaker.current_round, prop_mesg.block.round)
         for i in range(round,prop_mesg.block.round):
-            print("sending", self.proposal_msg_cache[i].block.round)
+            # print("sending", self.proposal_msg_cache[i].block.round)
             print(i, "is the sent round")
-            if i in self.proposal_msg_cache and self.proposal_msg_cache[i]!=None:
+            if i in self.proposal_msg_cache:
+                print(i)
                 send(('blocks_to_sync_up',[self.proposal_msg_cache[i]], i, ), to=p)
                 await(received(('One_block_done'+str(i),), from_=p))
+                
+                
+        print("ALL props are sent")
+        send(('All_blocks_sent',prop_mesg.block.round-1 ), to=p)
+        await(received(('All_blocks_received',), from_=p))
             # time.sleep(3)
-            print("Block done,", self.proposal_msg_cache[i].block.round)
+            # print("Block done,", self.proposal_msg_cache[i].block.round)
             # TODO: time.sleep
             # blocks_to_send.append(self.proposal_msg_cache[i])
             # send(('blocks_to_sync_up', self.proposal_msg_cache[i]), to=p)
@@ -316,6 +329,11 @@ class Validator (process):
         # send(('blocks_to_sync_up',blocks_to_send, ), to=p)
 
         # send(('sent', ), to=p)
+
+    def receive(msg=('All_blocks_sent', i), from_=p):
+        # TODO: Cache TC and sent --- or think about this case
+        self.pacemaker.current_round = i
+        send(('All_blocks_received',), to=p)
 
     def receive(msg=('blocks_to_sync_up', prop_msg_blocks, i), from_=p):
         print("Starting sync up for block", prop_msg_blocks[0].block.round)
@@ -347,7 +365,11 @@ class Validator (process):
             leader = self.leader_election.get_leader(round)
             '''if P.block.round 6= round ∨ P.sender 6= leader ∨ P.block.author 6= leader then
                     return'''
+            
+
+            print(proposal_msg.block.round,round,proposal_msg.sender, self.replicas.index(leader), proposal_msg.block.author , leader)
             if proposal_msg.block.round != round or replicas[proposal_msg.sender] != leader or replicas[proposal_msg.block.author] != leader:
+                print("EXITING HERE")
                 LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round, round, replicas[proposal_msg.sender], leader)
                 return
 
@@ -377,7 +399,7 @@ class Validator (process):
 
 
     def sync_up_proposal_msg(proposal_msg):
-        print(validator_id, "Asking sync_up", proposal_msg.sender, proposal_msg.block.round)
+        print(validator_id, "Asking sync_up", proposal_msg.sender, proposal_msg.block.round, "Current round", self.pacemaker.current_round)
         send(('sync_up', self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
         
         await(self.pacemaker.current_round == proposal_msg.block.round-1)
