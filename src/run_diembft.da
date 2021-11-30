@@ -53,7 +53,7 @@ class RunDiemBFT(process):
 
         await(each(c in clients, has=received(('Done',), from_=c)))
         output("All clients done, informing all validators.", config_id)
-        send(('Done',), to=validators)
+        # send(('Done',), to=validators)
 
 
 def is_config_valid(config):
