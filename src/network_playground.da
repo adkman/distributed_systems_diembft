@@ -1,0 +1,93 @@
+#M - (‘MsgType’, msgObj, dests[], round)
+
+class NetworkPlayground(process):
+    def setup(config, round_config, proc_to_vid, vid_to_proc, liveness_bound):
+        self.round_config = round_config
+        self.proc_to_vid = proc_to_vid
+        self.vid_to_proc = vid_to_proc
+        self.count_terminal_round_messages = set()
+        self.commit_tracker = dict() # <round, commit_acks[]>
+        self.recent_commit_round = None
+        self.liveness_bound = liveness_bound # liveness property is violated if there is no commit for proposal in liveness_bound number of rounds
+        self.config = config
+
+
+    def run():
+        await(received(('Done',), from_=parent()))
+        output('Exiting network playground')
+
+
+    def get_current_partition(curr_round):
+        if curr_round < len(self.round_config):
+            return self.round_config[curr_round]['partition']
+        else:
+            return [[x for x in range(self.config['nvalidators'])]]
+
+
+    def get_partition(current_partitions, proc):
+        for idx in range(len(current_partitions)):
+            if proc in current_partitions[idx]:
+                return idx
+        return None
+
+
+    def relay_msg(msgType, msgObj, dests, curr_round, src_proc):
+        src_vid = self.proc_to_vid[src_proc]
+        current_partitions = self.get_current_partition(curr_round)
+        src_partition = self.get_partition(current_partitions, src_proc)
+        for dest_vid in dests:
+            dest_procs = self.vid_to_proc[dest_vid]
+            for dest_proc in dest_procs:
+                dest_partition = self.get_partition(current_partitions, dest_proc)
+                if dest_partition == src_partition: # and not self.drop_message(curr_round, src_proc, msgType):
+                    print('sending', (msgType, msgObj, src_vid))
+                    send((msgType, msgObj, src_vid), to=dest_proc)
+
+
+    # TODO: I think we need to modify this
+    # Function drop_message(round, src_id, msgType)
+    #     for failure_config in failure_config[round] do
+    #         if failure_config.msgType != WILDCARD and
+    #                                         failure_config.msgType != msgType then
+    #             continue
+    #         end if
+    #         if failure_config.src != WILDCARD and failure_config.src != src_id then
+    #             continue
+    #         end if
+    #         return True
+    #     done
+    #     return False
+
+    def drop_message(round, src_proc, msgType):
+        # TODO:
+        # check condition and return True or False 
+        return False
+
+
+    def receive(msg=(msgType, msgObj, dests, curr_round), from_=src_proc):
+        print('received np', src_proc, msgType, 'Round', curr_round)
+
+        self.relay_msg(msgType, msgObj, dests, curr_round, src_proc)
+
+        # if curr_round > self.recent_commit_round + self.liveness_bound:
+        #     send(('LivenessViolation'), to=parent())
+
+        if curr_round >= len(self.round_config):
+            self.count_terminal_round_messages.add(self.proc_to_vid[src_proc])
+            if len(self.count_terminal_round_messages) == self.config['nvalidators']:
+                send(('Terminate'), to=parent())
+
+
+    def receive(msg=('CommitAck', commitMsg, curr_round), from_=src_proc):
+        output('CommitAck', commitMsg, curr_round, src_proc)
+        # if curr_round not in self.commit_tracker:
+        #     self.commit_tracker[curr_round] = []
+        # else:
+        #     # TODO: define is_commited_block_valid funtion
+        #     if is_committed_block_valid(M.committed_block, commit_tracker[round][-1]):
+        #         self.commit_tracker[curr_round].append()
+        #     else:
+        #         send(('SafetyViolation', curr_round, self.commit_tracker), to=self.executor)
+
+        # if len(self.commit_tracker[curr_round]) >= 2*config['nfaulty']+1:
+        #     self.recent_commit_round = curr_round

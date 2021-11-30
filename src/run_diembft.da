@@ -6,20 +6,20 @@ from typing import DefaultDict
 sys.path.append('../test_generator_config')
 sys.path.append('../test_executor_configs')
 
-from client import Client
-# from config import configs
-from test_generator_config import test_generator_configs
-from generator import TestGenerator
 from cryptography import Cryptography
-from validator import Validator, ValidatorFI
+from generator import TestGenerator
+from network_playground import NetworkPlayground
+from test_generator_config import test_generator_configs
+from validator import Validator
 
-#TODO: Include in a different file?
+
+# TODO: Include in a different file?
+
 
 class TestExecutor(process):
 
-    def setup(scenario, config, config_id,test_executor_id, curr_executor):
+    def setup(scenario, config, config_id, test_executor_id, curr_executor):
         self.nvalidators = int(config['nvalidators'])
-        self.nclients = int(config['nclients'])
         self.nfaulty = int(config['nfaulty'])
         self.liveness_bound = int(config['liveness_bound'])
         self.nrounds = config['nrounds']
@@ -35,14 +35,14 @@ class TestExecutor(process):
 
         private_keys_validators = {}
         public_keys_validators = {}
-        private_keys_clients = {}
-        public_keys_clients = {}
 
         proc_to_vid = {}
         vid_to_proc = DefaultDict(list)
 
-        log_path = '../logs/config' + str(config_id) + "/" + str(test_executor_id)
-        ledger_path = '../ledgers/config' + str(config_id) + "/" + str(test_executor_id)
+        log_path = '../logs/config' + \
+            str(config_id) + "/" + str(test_executor_id)
+        ledger_path = '../ledgers/config' + \
+            str(config_id) + "/" + str(test_executor_id)
 
         # if os.path.exists(log_path):# and os.path.isdir(log_path):
         shutil.rmtree(log_path, ignore_errors=True)
@@ -52,90 +52,77 @@ class TestExecutor(process):
         os.makedirs(ledger_path)
         os.makedirs(log_path)
 
-        validators = list(new(Validator, num=(nvalidators+nfaulty)))
-        clients = new(Client, num=nclients)
+        validators = list(new(Validator, num=(nvalidators + nfaulty)))
 
         for idx in range(len(validators)):
             node = validators[idx]
-            vid = idx%nvalidators
+            vid = idx % nvalidators
             proc_to_vid[node] = vid
             vid_to_proc[vid].append(node)
-            if idx<nvalidators:
+            if idx < nvalidators:
                 private_key, public_key = Cryptography.generate_key()
                 private_keys_validators[vid] = private_key
                 public_keys_validators[vid] = public_key
-    
 
-        # for v in validators:
-        #     private_key, public_key = Cryptography.generate_key()
-        #     private_keys_validators[v] = private_key
-        #     public_keys_validators[v] = public_key
+        for v in validators:
+            private_key, public_key = Cryptography.generate_key()
+            private_keys_validators[v] = private_key
+            public_keys_validators[v] = public_key
 
-        # for c in clients:
-        #     private_key, public_key = Cryptography.generate_key()
-        #     private_keys_clients[c] = private_key
-        #     public_keys_clients[c] = public_key
+        network_playground = new(NetworkPlayground)
+        setup(
+            {network_playground},
+            (
+                config,
+                self.round_config,
+                proc_to_vid,
+                vid_to_proc,
+                self.liveness_bound
+            )
+        )
+        start(network_playground)
 
-        #NETWORK PLAYGROUND
-        # network_playground = NetworkPlayground(self.round_config , config, 
-        #                         proc_to_vid, vid_to_proc, liveness_bound, curr_executor)
-
-
-        # for i, v in enumerate(validators):
-        #     setup({v}, (config, config_id, i, list(validators), list(clients),
-        #                 private_keys_validators[v], public_keys_validators, public_keys_clients))
         for i, v in enumerate(validators):
             node = validators[i]
             print(node)
-            vid = i%nvalidators
-            setup({node}, (config, config_id, vid, list(validators), list(clients),
-                        private_keys_validators[vid%nvalidators], public_keys_validators, public_keys_clients, round_to_leader, test_executor_id, i, proc_to_vid, vid_to_proc))
-
-        # for i, c in enumerate(clients):
-        #     setup({c}, (config, config_id, i, list(validators),
-        #                 private_keys_clients[c], public_keys_validators))
+            vid = i % nvalidators
+            setup(
+                {node},
+                (
+                    config,
+                    config_id,
+                    vid,
+                    list(validators),
+                    private_keys_validators[vid % nvalidators],
+                    public_keys_validators,
+                    round_to_leader,
+                    test_executor_id,
+                    i,
+                    proc_to_vid,
+                    vid_to_proc,
+                    network_playground
+                )
+            )
 
         start(validators)
-        # start(clients)
 
-        # start(network_playground)
-
-        # await(each(c in clients, has=received(('Done',), from_=c)))
-        # output("All clients done, informing all validators.", config_id)
-        # send(('Done',), to=validators)
         await(received(('Terminate',)))
-        # if p == curr_executor:
-        #     output("Received a Violations, letting all validators know")
-        # else:
         output("Received terminate, informing all validators and network playground")
-        send(('Done',), to=Validators)
+        send(('Done',), to=network_playground)
+        send(('Done',), to=validators)
 
     def receive(msg=('SafetyViolation', round, commit_tracker), from_=p):
-        print("safetyViolation")
+        print("Safety Violation")
         send(('Terminate',), to=curr_executor)
 
-    def receive(msg=('‘Liveness Violation’', round, commit_tracker), from_=p):
-        print("‘Liveness Violation’")
+    def receive(msg=('LivenessViolation', round, commit_tracker), from_=p):
+        print("Liveness Violation")
         send(('Terminate',), to=curr_executor)
-
-
-
-def is_config_valid(config):
-    if int(config['nvalidators']) < (3 * int(config['nfaulty']) + 1):
-        print(
-            "Number of validators should be more than thrice of number of faulty validators.")
-        return False
-    if (int(config['nfaulty']) > int(config['exclude_size'])) or (int(config['exclude_size']) > 2 * int(config['nfaulty'])):
-        print(
-            "Exlude size should be between nfaulty and 2*nfaulty")
-        return False
-    return True
 
 
 def main():
 
-    #Read test_generator_config
-    
+    # Read test_generator_config
 
     # if os.path.exists('../logs/'):# and os.path.isdir('../logs/'):
     shutil.rmtree('../logs/', ignore_errors=True)
@@ -150,21 +137,18 @@ def main():
 
     config_id = 0
     for config in test_generator_configs:
-        # if not is_config_valid(config):
-        #     output("The provided config", config,
-        #            "is not valid. Skipping this config.")
-        #     continue
-        TestGenerator(  config['nvalidators'],
-                        config['nfaulty'],
-                        config['nrounds'],
-                        config['leader_selection_type'],
-                        config['step1_limit'],
-                        config['step2_limit'],
-                        config['step3_limit'],
-                        config['enum_order'],
-                        '../test_executor_configs/scenario_'+str(config_id)+".da",
-                        config['number_of_partitions'],
-                        config['maximum_messages_to_drop'])
+        TestGenerator(config['nvalidators'],
+                      config['nfaulty'],
+                      config['nrounds'],
+                      config['leader_selection_type'],
+                      config['step1_limit'],
+                      config['step2_limit'],
+                      config['step3_limit'],
+                      config['enum_order'],
+                      '../test_executor_configs/scenario_' +
+                      str(config_id)+".da",
+                      config['number_of_partitions'],
+                      config['maximum_messages_to_drop'])
         # f = open('scenario_'+config_id, 'r'):
         # lala = '../test_executor_configs/scenario_'+str(config_id)
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -173,14 +157,11 @@ def main():
         test_executor_config = getattr(lala, "test_executor_config")
         test_executor_id = 0
         for scenario in test_executor_config:
-            p = new(TestExecutor)
-            setup(p, (scenario, config, config_id,test_executor_id, p))
-            start(p)
+            executor = new(TestExecutor)
+            setup({executor}, (scenario, config,
+                               config_id, test_executor_id, executor))
+            start(executor)
 
             test_executor_id += 1
 
-        # for test_executor_config in 
-        #     p = new(TestExecutor)
-        #     setup(p, (config, config_id))
-        #     start(p)
         config_id += 1
