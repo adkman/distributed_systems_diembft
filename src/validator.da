@@ -173,25 +173,13 @@ class Validator (process):
 
             if self.syncingup==False:
                 if not ((validator_id==2 ) and (proposal_msg.block.round>=3 and proposal_msg.block.round<=7)):
-                    # if validator_id == 2:
-                    #     print("ROUNd", self.pacemaker.current_round)
                     if self.pacemaker.current_round < proposal_msg.block.round-1:
                         self.syncingup = True
-                        # print("proposal_msg.sender",proposal_msg.sender, self, validator_id)
                         print(validator_id, "Asking sync_up", proposal_msg.sender, proposal_msg.block.round)
                         send(('sync_up', self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
-                        # await(received(('sync_up done',), from_=self))
                         await(self.pacemaker.current_round == proposal_msg.block.round-1)
                         print("sync_up done from sync_up")
-                        # if len(self.missed_pops) > 0:
-                        #     # TODO: have deepcopy of this
-                        #     k = self.missed_pops[:]
-
-                        #     self.missed_pops.clear()
-                        #     for prop in k:
-                        #         send(('blocks_to_sync_up',[prop], ), to=self)
-                            
-                        self.syncingup = False
+                        
                         
                     self.should_start_new_round = False
 
@@ -206,12 +194,6 @@ class Validator (process):
                     '''Pacemaker.advance round tc(P.last round tc)'''
                     self.pacemaker.advance_round_tc(proposal_msg.last_round_tc)
 
-                    # print("current round and proposal message blocks round",self.pacemaker.current_round, proposal_msg.block.round)
-                    # if self.pacemaker.current_round < proposal_msg.block.round:
-                    #     print("proposal_msg.sender",proposal_msg.sender)
-                    #     send(('sync_up',self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
-                    
-                            
                     self.proposal_msg_cache[proposal_msg.block.round] = proposal_msg
 
                     '''round ← Pacemaker.current round'''
@@ -237,6 +219,8 @@ class Validator (process):
                     '''Block-Tree.execute and insert(P) // Adds a new speculative state to the Ledger'''
                     self.blocktree.execute_and_insert(proposal_msg.block)
 
+                    self.syncingup = False
+
                     '''vote msg ← Safety.make vote(P.block, P.last round tc)'''
                     vote_msg = self.safety.make_vote(
                         proposal_msg.block, proposal_msg.last_round_tc)
@@ -248,28 +232,23 @@ class Validator (process):
                         send(('Vote', vote_msg),
                             to=next_leader)
                         LOGGER.log_event("Sent", "Vote", vote_msg, next_leader)
-                    if validator_id == 2:
-                        print("CUURENT ROUND AFTER SYNCUP",self.pacemaker.current_round, self.recently_received_proposal.block.round)
+
+
+                    # if validator_id == 2:
+                    #     print("CUURENT ROUND AFTER SYNCUP",self.pacemaker.current_round, self.recently_received_proposal.block.round)
                     while self.pacemaker.current_round < self.recently_received_proposal.block.round:
-                        print(self.pacemaker.current_round, self.recently_received_proposal.block.round)
-                        # if self.pacemaker.current_round < proposal_msg.block.round-1:
-                        self.syncingup = True
+
+                        # print(self.pacemaker.current_round, self.recently_received_proposal.block.round)
+                        
+                        
                         proposal_msg = self.recently_received_proposal
-                        # print("proposal_msg.sender",proposal_msg.sender, self, validator_id)
+                        
+                        self.syncingup = True
                         print(validator_id, "Asking sync_up", proposal_msg.sender, proposal_msg.block.round)
                         send(('sync_up', self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
-                        # await(received(('sync_up done',), from_=self))
+                        
                         await(self.pacemaker.current_round == proposal_msg.block.round-1)
                         print("sync_up done from sync_up")
-                        # if len(self.missed_pops) > 0:
-                        #     # TODO: have deepcopy of this
-                        #     k = self.missed_pops[:]
-
-                        #     self.missed_pops.clear()
-                        #     for prop in k:
-                        #         send(('blocks_to_sync_up',[prop], ), to=self)
-                            
-                        
 
                         self.should_start_new_round = False
 
@@ -284,12 +263,6 @@ class Validator (process):
                         '''Pacemaker.advance round tc(P.last round tc)'''
                         self.pacemaker.advance_round_tc(proposal_msg.last_round_tc)
 
-                        # print("current round and proposal message blocks round",self.pacemaker.current_round, proposal_msg.block.round)
-                        # if self.pacemaker.current_round < proposal_msg.block.round:
-                        #     print("proposal_msg.sender",proposal_msg.sender)
-                        #     send(('sync_up',self.pacemaker.current_round, proposal_msg), to=self.replicas[proposal_msg.sender])
-                        
-                                
                         self.proposal_msg_cache[proposal_msg.block.round] = proposal_msg
 
                         '''round ← Pacemaker.current round'''
@@ -302,13 +275,6 @@ class Validator (process):
                             LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round, round, replicas[proposal_msg.sender], leader)
                             return
 
-                        # if p != replicas[validator_id]:
-                        #     # Validate (and remove) the transactions in current mempool with the received txns
-                        #     if not self.mempool.validate_and_remove_transactions(proposal_msg.block.payload):
-                        #         LOGGER.log(
-                        #             "Not processing the Proposal message as transactions are not valid", None)
-                        #         return
-
                         if len(proposal_msg.block.payload) == 0:
                             self.should_start_new_round = True
 
@@ -317,8 +283,8 @@ class Validator (process):
 
                         self.syncingup = False
 
-            if validator_id == 2:
-                print("current round", self.pacemaker.current_round, self.recently_received_proposal.block.round)
+            # if validator_id == 2:
+            #     print("current round", self.pacemaker.current_round, self.recently_received_proposal.block.round)
 
                         # if self.self.pacemaker.current_round
                         
@@ -478,6 +444,9 @@ class Validator (process):
         # send(('sync_up done', ), to=self)
 
     # TODO: Handle missed proposal
+
+    # def sync_up():
+
 
 
 class ValidatorFI (process, Validator):
