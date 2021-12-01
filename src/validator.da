@@ -17,14 +17,13 @@ class Validator (process):
         config,
         config_id: int,
         validator_id: int,
+        uniq_vid,
         replicas: list,
         private_key,
         public_keys_validators,
         round_to_leader,
         test_executor_id,
-        uniq_vid,
-        proc_to_vid,
-        vid_to_proc,
+        proc_to_uid,
         network_playground
     ):
 
@@ -40,10 +39,9 @@ class Validator (process):
         self.id_block = dict()
         self.request_cache = dict()
         self.recently_committed_block_ids = list()
-        self.should_start_new_round = True
         self.round_to_leader = round_to_leader
         self.uniq_vid = uniq_vid
-        self.proc_to_vid = proc_to_vid
+        self.proc_to_uid = proc_to_uid
         self.ledger = Ledger(
             config_id, validator_id, self.id_block,
             self.recently_committed_block_ids, self.request_cache,
@@ -57,14 +55,13 @@ class Validator (process):
             validator_id, replicas, self.blocktree, self.safety,
             config['nfaulty'], config['delta'], send_timeout_msg
         )
-        self.mempool = MemPool(uniq_vid)
-        self.leader_election = LeaderElection(
-            validator_id, replicas, round_to_leader)
+        self.mempool = MemPool(uniq_vid, self.pacemaker)
+        self.leader_election = LeaderElection(round_to_leader)
 
         self.proposal_msgs_cache = []  # round number is the index
 
         Cryptography.private_key = self.private_key
-        Cryptography.proc_to_vid = self.proc_to_vid
+        Cryptography.proc_to_uid = self.proc_to_uid
         Cryptography.replicas = self.replicas
         Cryptography.public_keys_validators = self.public_keys_validators
 
@@ -72,7 +69,6 @@ class Validator (process):
     def run():
         self.pacemaker.start_timer(1)
         LOGGER.log(replicas[validator_id])
-        # process_new_round_event(None)
         await(received(('Done',), from_=parent()))
         self.pacemaker.stop_timer(self.pacemaker.current_round)
         output("Validator", self.validator_id, "is exiting")
@@ -80,8 +76,6 @@ class Validator (process):
     # Broadcast the timeout message
     def send_timeout_msg(timeout_msg):
         LOGGER.log('Validator: send_timeout_message', timeout_msg)
-        # if self.pacemaker.current_round > len(round_to_leader):
-        #     sys.exit()
         send(('Timeout', timeout_msg, [x for x in range(len(self.replicas))],
               self.pacemaker.current_round), to=network_playground)
         LOGGER.log_event('Sent', 'Timeout', timeout_msg, self.replicas)
@@ -123,28 +117,7 @@ class Validator (process):
         LOGGER.log('Validator: process_new_round_event', last_tc)
 
         '''if u = LeaderElection.get leader(Pacemaker.current round) then'''
-        # TODO: Handle for TWIN
-        if proc_to_vid[self.replicas[validator_id]] == self.leader_election.get_leader(self.pacemaker.current_round):
-
-            # TODO make sure we don't need this
-            # # Check if there are any transactions in the MemPool
-            # if self.mempool.peek_pool() == 0:
-            #     self.should_start_new_round = True
-            #     prev_block = self.id_block[self.blocktree.high_qc.vote_info.id]
-            #     prev_block_txn_len = len(prev_block.payload)
-            #     prev_qc = prev_block.qc
-            #     if prev_qc is not None:
-            #         prev_prev_block = self.id_block[prev_qc.vote_info.id]
-            #         prev_prev_block_txn_len = len(prev_prev_block.payload)
-            #     else:
-            #         prev_prev_block_txn_len = 0
-
-            #     # Check if last two parent blocks had empty transactions
-            #     # No need to process new round with empty blocks anymore
-            #     if prev_block_txn_len == 0 and prev_prev_block_txn_len == 0:
-            #         LOGGER.log(
-            #             'Validator: process_new_round_event: returned as no transactions in mempool', last_tc)
-            #         return
+        if validator_id == self.leader_election.get_leader(self.pacemaker.current_round):
 
             '''b ← Block-Tree.generate block( MemPool.get transactions(),
                     Pacemaker.current round )'''
@@ -179,9 +152,7 @@ class Validator (process):
             '''Add proposal message to cache, that is used for sync up'''
             proposal_msgs_cache.append(proposal_msg)
 
-            self.should_start_new_round = False
-
-            if proposal_msg.block.qc is not None and src_vid != proc_to_vid[replicas[validator_id]]:
+            if proposal_msg.block.qc is not None and src_vid != validator_id:
                 '''process certificate qc(P.block.qc)'''
                 process_certificate_qc(proposal_msg.block.qc)
 
@@ -198,13 +169,10 @@ class Validator (process):
             leader = self.leader_election.get_leader(round)
             '''if P.block.round 6= round ∨ P.sender 6= leader ∨ P.block.author 6= leader then
                     return'''
-            if proposal_msg.block.round != round or proc_to_vid[replicas[proposal_msg.sender]] != leader or proc_to_vid[replicas[proposal_msg.block.author]] != leader:
+            if proposal_msg.block.round != round or self.proc_to_uid[replicas[proposal_msg.sender]] != leader or self.proc_to_uid[replicas[proposal_msg.block.author]] != leader:
                 LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round,
                            round, replicas[proposal_msg.sender], leader)
                 return
-
-            if len(proposal_msg.block.payload) == 0:
-                self.should_start_new_round = True
 
             '''Block-Tree.execute and insert(P) // Adds a new speculative state to the Ledger'''
             self.blocktree.execute_and_insert(proposal_msg.block)

@@ -36,7 +36,7 @@ class TestExecutor(process):
         private_keys_validators = {}
         public_keys_validators = {}
 
-        proc_to_vid = {}
+        proc_to_uid = {}
         vid_to_proc = DefaultDict(list)
 
         log_path = '../logs/config' + \
@@ -57,7 +57,7 @@ class TestExecutor(process):
         for idx in range(len(validators)):
             node = validators[idx]
             vid = idx % nvalidators
-            proc_to_vid[node] = vid
+            proc_to_uid[node] = idx
             vid_to_proc[vid].append(node)
             if idx < nvalidators:
                 private_key, public_key = Cryptography.generate_key()
@@ -75,7 +75,7 @@ class TestExecutor(process):
             (
                 config,
                 self.round_config,
-                proc_to_vid,
+                proc_to_uid,
                 vid_to_proc,
                 self.liveness_bound
             )
@@ -92,21 +92,21 @@ class TestExecutor(process):
                     config,
                     config_id,
                     vid,
+                    i,
                     list(validators),
                     private_keys_validators[vid % nvalidators],
                     public_keys_validators,
                     round_to_leader,
                     test_executor_id,
-                    i,
-                    proc_to_vid,
-                    vid_to_proc,
+                    proc_to_uid,
                     network_playground
                 )
             )
 
         start(validators)
 
-        await(received(('Terminate',)))
+        print("WAITING FOR TERMINATE")
+        await(received(('Terminate',), from_=network_playground))
         output("Received terminate, informing all validators and network playground")
         send(('Done',), to=network_playground)
         send(('Done',), to=validators)

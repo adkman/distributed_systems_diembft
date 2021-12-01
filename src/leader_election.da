@@ -5,9 +5,9 @@ from logger_util import LOGGER
 class LeaderElection:
 
     # def __init__(self, validator_id, replicas, ledger, pacemaker, window_size, exclude_size):
-    def __init__(self, validator_id, replicas, round_to_leader):
-        self.validator = replicas[validator_id]
-        self.validator_id = validator_id
+    def __init__(self, round_to_leader):
+        # self.validator = replicas[validator_id]
+        # self.validator_id = validator_id
         '''validators; // The list of current validators'''
         self.round_to_leader = round_to_leader
 
@@ -23,7 +23,10 @@ class LeaderElection:
 
     '''Function get leader(round)'''
     def get_leader(self, round):
-        return self.round_to_leader[round-2]
+        if len(self.round_to_leader) > round - 2:
+            return self.round_to_leader[round - 2]
+        else:
+            return 0
         # LOGGER.log('LeaderElection: get_leader', round)
         # '''if <round, leader> ∈ reputation leaders then'''
         # if round in self.reputation_leaders:
