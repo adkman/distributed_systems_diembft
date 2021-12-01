@@ -144,7 +144,9 @@ def main():
         #               config['step1_limit'],
         #               config['step2_limit'],
         #               config['step3_limit'],
-        #               config['enum_order'],
+        #               config['step1_enum_order'],
+        #               config['step2_enum_order'],
+        #               config['step3_enum_order'],
         #               '../test_executor_configs/scenario_' +
         #               str(config_id)+".da",
         #               config['number_of_partitions'],
