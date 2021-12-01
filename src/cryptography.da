@@ -64,3 +64,9 @@ class Cryptography:
     def valid_signature_with_signer(message, signer):
         signature = Cryptography.get_verified_message(message, Cryptography.public_keys_validators[Cryptography.proc_to_uid[Cryptography.replicas[signer]]])
         return signature is not None
+
+    def verify_block_hash(block):
+        if block.qc is None:
+            return block.id == Cryptography.hash(block.author, block.round, block.payload)
+        else:
+            return block.id == Cryptography.hash(block.author, block.round, block.payload, block.qc.vote_info.id, block.qc.signatures)

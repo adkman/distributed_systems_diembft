@@ -158,7 +158,7 @@ class Validator (process):
             proposal_msg.signature, public_keys_validators[src_vid])
 
     
-        if signature_verified is not None:
+        if signature_verified is not None and Cryptography.verify_block_hash(proposal_msg.block):
             LOGGER.log_action("Verified ProposalMsg signature", True)
             self.recently_received_proposal = proposal_msg
 
