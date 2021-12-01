@@ -70,3 +70,6 @@ class Cryptography:
             return block.id == Cryptography.hash(block.author, block.round, block.payload)
         else:
             return block.id == Cryptography.hash(block.author, block.round, block.payload, block.qc.vote_info.id, block.qc.signatures)
+
+    def verify_vote_msg_hash(vote_msg):
+        return vote_msg.ledger_commit_info.vote_info_hash == Cryptography.hash(vote_msg.vote_info)

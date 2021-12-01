@@ -251,7 +251,7 @@ class Validator (process):
         if not(self.pacemaker.current_round == vote_msg.vote_info.round):
             return 
 
-        if signature_verified is not None:
+        if signature_verified is not None and Cryptography.verify_vote_msg_hash(vote_msg):
             LOGGER.log_action("Verified VoteMsg signature", True)
 
             '''qc ← Block-Tree.process vote(M)'''
