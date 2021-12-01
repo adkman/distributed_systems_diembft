@@ -137,7 +137,7 @@ class TestGenerator():
             sys.exit()
 
     def get_round_config_with_msg_drops(self, round_config, maximum_messages_to_drop):
-        msgTypes = ["Proposal", "QC", "Vote", "TimeOut"]
+        msgTypes = ["Proposal", "Vote", "Timeout"]
         for scenario in round_config:
             # print("New scenario")
             for i, round in enumerate(scenario):

@@ -130,30 +130,27 @@ def main():
     # if os.path.exists('../ledgers/'):# and os.path.isdir('../ledgers/'):
     shutil.rmtree('../ledgers/', ignore_errors=True)
 
-    if os.path.exists('../test_executor_configs/') and os.path.isdir('../test_executor_configs/'):
-        shutil.rmtree('../test_executor_configs/', ignore_errors=True)
+    # if os.path.exists('../test_executor_configs/') and os.path.isdir('../test_executor_configs/'):
+    #     shutil.rmtree('../test_executor_configs/', ignore_errors=True)
 
-    os.makedirs('../test_executor_configs/')
+    # os.makedirs('../test_executor_configs/')
 
     config_id = 0
     for config in test_generator_configs:
-        TestGenerator(config['nvalidators'],
-                      config['nfaulty'],
-                      config['nrounds'],
-                      config['leader_selection_type'],
-                      config['step1_limit'],
-                      config['step2_limit'],
-                      config['step3_limit'],
-                      config['enum_order'],
-                      '../test_executor_configs/scenario_' +
-                      str(config_id)+".da",
-                      config['number_of_partitions'],
-                      config['maximum_messages_to_drop'])
-        # f = open('scenario_'+config_id, 'r'):
-        # lala = '../test_executor_configs/scenario_'+str(config_id)
-        # print("Current working directory: {0}".format(os.getcwd()))
-        lala = "scenario_0"
-        lala = __import__("scenario_0")
+        # TestGenerator(config['nvalidators'],
+        #               config['nfaulty'],
+        #               config['nrounds'],
+        #               config['leader_selection_type'],
+        #               config['step1_limit'],
+        #               config['step2_limit'],
+        #               config['step3_limit'],
+        #               config['enum_order'],
+        #               '../test_executor_configs/scenario_' +
+        #               str(config_id)+".da",
+        #               config['number_of_partitions'],
+        #               config['maximum_messages_to_drop'])
+        # lala = __import__("scenario_0")
+        lala = __import__("scenario_random")
         test_executor_config = getattr(lala, "test_executor_config")
         test_executor_id = 0
         for scenario in test_executor_config:

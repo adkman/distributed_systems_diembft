@@ -1,21 +1,21 @@
 test_generator_configs = [
     {
-        'nvalidators': 3,
+        'nvalidators': 8,
         'nfaulty': 1,
         'nclients': 3,
         'nclientops': 2,
         'clienttimeout': 10,
-        'delta': 2,
-        'nrounds': 7,
+        'delta': 4,
+        'nrounds': 8,
         'leader_selection_type': 'all',
         # 'leader_selection_type': 'twins_only',
         'step1_limit': 10,
         'step2_limit': 10,
         'step3_limit': 1,
-        # 'enum_order': 'deterministic',
-        'enum_order': 'random',
-        'number_of_partitions': 2,
+        'enum_order': 'deterministic',
+        # 'enum_order': 'random',
+        'number_of_partitions': 1,
         'liveness_bound': 3,
-        'maximum_messages_to_drop': 2
+        'maximum_messages_to_drop': 0
     },
 ]

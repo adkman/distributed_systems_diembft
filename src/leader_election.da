@@ -23,10 +23,13 @@ class LeaderElection:
 
     '''Function get leader(round)'''
     def get_leader(self, round):
-        if len(self.round_to_leader) > round - 2:
-            return self.round_to_leader[round - 2]
+        if len(self.round_to_leader) > round:
+            return self.round_to_leader[round]
         else:
-            return 0
+            return 1
+        # if round == 6:
+        #     return self.replicas[2]
+        # return self.replicas[0]
         # LOGGER.log('LeaderElection: get_leader', round)
         # '''if <round, leader> ∈ reputation leaders then'''
         # if round in self.reputation_leaders:

@@ -46,7 +46,7 @@ class NetworkPlayground(process):
         current_config = self.get_current_config(curr_round)
         current_partitions = current_config['partition']
 
-        print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions)
+        # print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions)
 
         src_partition = self.get_partition(current_partitions, self.proc_to_uid[src_proc])
         for dest_vid in dests:
@@ -59,12 +59,13 @@ class NetworkPlayground(process):
 
     def receive(msg=(msgType, msgObj, dests, curr_round), from_=src_proc):
 
-        self.relay_msg(msgType, msgObj, dests, curr_round, src_proc)
+        if curr_round < len(self.round_config):
+            self.relay_msg(msgType, msgObj, dests, curr_round, src_proc)
 
         # if curr_round > self.recent_commit_round + self.liveness_bound:
         #     send(('LivenessViolation'), to=parent())
 
-        if curr_round > len(self.round_config):
+        if curr_round >= len(self.round_config):
             self.count_terminal_round_messages.add(self.proc_to_uid[src_proc]%self.config['nvalidators'])
             if len(self.count_terminal_round_messages) >= self.config['nvalidators']:
                 print('SHOULD TERMINATE NOW')
