@@ -1,0 +1,141 @@
+import os
+import shutil
+import sys
+from typing import DefaultDict
+
+from cryptography import Cryptography
+from validator import Validator
+from network_playground import NetworkPlayground
+
+sys.path.append('../test_executor_configs')
+sys.path.append('../test_generator_config')
+from test_generator_config import test_generator_configs
+
+class TestExecutor(process):
+
+    def setup(scenario, config, config_id, test_executor_id, curr_executor):
+        self.nvalidators = int(config['nvalidators'])
+        self.nfaulty = int(config['nfaulty'])
+        self.liveness_bound = int(config['liveness_bound'])
+        self.nrounds = config['nrounds']
+        self.round_config = scenario
+        self.round_to_leader = {}
+
+        for round in range(len(scenario)):
+            self.round_to_leader[round] = scenario[round]['Leader']
+
+        print(self.round_to_leader)
+
+    def run():
+
+        private_keys_validators = {}
+        public_keys_validators = {}
+
+        proc_to_uid = {}
+        vid_to_proc = DefaultDict(list)
+
+        log_path = '../logs/config' + \
+            str(config_id) + "/" + str(test_executor_id)
+        ledger_path = '../ledgers/config' + \
+            str(config_id) + "/" + str(test_executor_id)
+
+        # if os.path.exists(log_path):# and os.path.isdir(log_path):
+        shutil.rmtree(log_path, ignore_errors=True)
+        # if os.path.exists(ledger_path):# and os.path.isdir(ledger_path):
+        shutil.rmtree(ledger_path, ignore_errors=True)
+
+        os.makedirs(ledger_path)
+        os.makedirs(log_path)
+
+        validators = list(new(Validator, num=(nvalidators + nfaulty)))
+
+        for idx in range(len(validators)):
+            node = validators[idx]
+            vid = idx % nvalidators
+            proc_to_uid[node] = idx
+            vid_to_proc[vid].append(node)
+            if idx < nvalidators:
+                private_key, public_key = Cryptography.generate_key()
+                private_keys_validators[vid] = private_key
+                public_keys_validators[vid] = public_key
+
+        for v in validators:
+            private_key, public_key = Cryptography.generate_key()
+            private_keys_validators[v] = private_key
+            public_keys_validators[v] = public_key
+
+        network_playground = new(NetworkPlayground)
+        setup(
+            {network_playground},
+            (
+                config,
+                self.round_config,
+                proc_to_uid,
+                vid_to_proc,
+                self.liveness_bound
+            )
+        )
+        start(network_playground)
+
+        for i, v in enumerate(validators):
+            node = validators[i]
+            print(node)
+            vid = i % nvalidators
+            setup(
+                {node},
+                (
+                    config,
+                    config_id,
+                    vid,
+                    i,
+                    list(validators),
+                    private_keys_validators[vid % nvalidators],
+                    public_keys_validators,
+                    round_to_leader,
+                    test_executor_id,
+                    proc_to_uid,
+                    network_playground
+                )
+            )
+
+        start(validators)
+
+        print("WAITING FOR TERMINATE")
+        await(received(('Terminate',)))
+        output("Received terminate, informing all validators and network playground")
+        send(('Done',), to=network_playground)
+        send(('Done',), to=validators)
+
+    def receive(msg=('SafetyViolation', round, commit_tracker), from_=p):
+        print("Safety Violation")
+        send(('Terminate',), to=curr_executor)
+
+    def receive(msg=('LivenessViolation', round, commit_tracker), from_=p):
+        print("Liveness Violation")
+        send(('Terminate',), to=curr_executor)
+
+
+def main():
+
+    # if os.path.exists('../logs/'):# and os.path.isdir('../logs/'):
+    shutil.rmtree('../logs/', ignore_errors=True)
+
+    # if os.path.exists('../ledgers/'):# and os.path.isdir('../ledgers/'):
+    shutil.rmtree('../ledgers/', ignore_errors=True)
+
+    config_id = 0
+    for config in test_generator_configs:
+
+        scenario_module = __import__("scenario_"+str(config_id))
+        # scenario_module = __import__("scenario_random")
+        test_executor_config = getattr(scenario_module, "test_executor_config")
+        test_executor_id = 0
+        for scenario in test_executor_config:
+            executor = new(TestExecutor)
+            setup({executor}, (scenario, config,
+                               config_id, test_executor_id, executor))
+            start(executor)
+
+            test_executor_id += 1
+
+        config_id += 1

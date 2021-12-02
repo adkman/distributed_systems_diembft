@@ -1,10 +1,13 @@
 #Generator
+import shutil
 import random
 import os
 import json
 import sys
 import copy
 
+sys.path.append('../test_generator_config')
+from test_generator_config import test_generator_configs
 
 class TestGenerator():
 
@@ -157,3 +160,29 @@ class TestGenerator():
                 # print(round)
 
         return round_config
+
+
+def main():
+
+    if os.path.exists('../test_executor_configs/') and os.path.isdir('../test_executor_configs/'):
+        shutil.rmtree('../test_executor_configs/', ignore_errors=True)
+
+    os.makedirs('../test_executor_configs/')
+
+    config_id = 0
+    for config in test_generator_configs:
+        TestGenerator(config['nvalidators'],
+                      config['nfaulty'],
+                      config['nrounds'],
+                      config['leader_selection_type'],
+                      config['step1_limit'],
+                      config['step2_limit'],
+                      config['step3_limit'],
+                      config['step1_enum_order'],
+                      config['step2_enum_order'],
+                      config['step3_enum_order'],
+                      '../test_executor_configs/scenario_' +
+                      str(config_id)+".da",
+                      config['number_of_partitions'],
+                      config['maximum_messages_to_drop'])
+        config_id += 1
