@@ -26,7 +26,7 @@ class LeaderElection:
         if len(self.round_to_leader) > round:
             return self.round_to_leader[round]
         else:
-            return 1
+            return 0
         # if round == 6:
         #     return self.replicas[2]
         # return self.replicas[0]
