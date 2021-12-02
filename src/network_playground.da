@@ -1,11 +1,15 @@
+import time
+
 from logger_util import LOGGER
 
 
 class NetworkPlayground(process):
 
-    def setup(config, round_config, proc_to_uid, vid_to_proc, liveness_bound):
+    def setup(config, round_config, proc_to_uid, vid_to_proc, liveness_bound, config_id, test_executor_id):
 
-        LOGGER.filename = '../logs/network_playground.log'
+        LOGGER.filename = '../logs/config' + \
+            str(config_id) + '/' + str(test_executor_id) + \
+            '/' + 'network_playground.log'
 
         self.round_config = round_config
         self.proc_to_uid = proc_to_uid
@@ -19,8 +23,12 @@ class NetworkPlayground(process):
         self.timeout_drop_count = dict()  # <round, dict()<uid, count>>
 
     def run():
+        start = time.time()
+        LOGGER.log_action("Scenario configuration", self.round_config)
         await(received(('Done',), from_=parent()))
         output('Exiting network playground')
+        end = time.time()
+        LOGGER.log_action("Elapsed time for this scenario", str(end - start) + ' s')
 
     def get_current_config(curr_round):
         if curr_round < len(self.round_config):
@@ -86,9 +94,10 @@ class NetworkPlayground(process):
             return
 
         if curr_round > self.recent_committed_blocks_proposed_round + self.liveness_bound:
+            output('LIVENESS VIOLATED!')
             LOGGER.log_network_event(curr_round, msgType, [
                                      'Liveness Violation detected!', 'No blocks are commited since blocks proposed in round', self.recent_committed_blocks_proposed_round])
-            send(('Terminate'), to=parent())
+            send(('Terminate',), to=parent())
 
         if curr_round < len(self.round_config):
             self.relay_msg(msgType, msgObj, dests, curr_round, src_proc)
@@ -107,7 +116,8 @@ class NetworkPlayground(process):
             if is_committed_block_valid(block, self.commit_tracker[idx][-1]):
                 self.commit_tracker[idx].append(block.payload[0]['command'])
             else:
-                LOGGER.log_network_event(curr_round, msgType, [
+                output('SAFETY VIOLATED!')
+                LOGGER.log_network_event(curr_round, 'CommitAck', [
                                          'Safety Violation detected!', 'Inconsistency in the transactions committed to ledger at index', idx])
                 send(('Terminate',), to=parent())
 
