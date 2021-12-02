@@ -45,6 +45,7 @@ class Validator (process):
         # self.missed_pops = []
         # self.recently_processed_proposal = None
         self.recently_received_proposal = None
+        self.commit_idx = 0
 
         self.ledger = Ledger(
             config_id, validator_id, self.id_block,
@@ -99,16 +100,11 @@ class Validator (process):
         # Send responses to the requests which were recently committed
         if len(self.recently_committed_block_ids) > 0:
             for block_id in self.recently_committed_block_ids:
-                for txn in self.id_block[block_id].payload:
-                    request_id = txn['req_id']
-                    resp = {
-                        'req_id': request_id,
-                        'resp_status': "success"
-                    }
-                    # TODO: Confirm what to do with response Maybe handle SafetyViolation commitAcks here
-                    # send(('Response', resp), to=txn['client'])
-                    # LOGGER.log_event("Sent", "Response", resp, txn['client'])
-                    self.request_cache[request_id] = resp
+                idx = self.commit_idx
+                self.commit_idx += 1
+                block_committed = self.id_block[block_id]
+                curr_round = self.pacemaker.current_round
+                send(('CommitAck', idx, block_committed, curr_round, ), to=network_playground)
             self.recently_committed_block_ids.clear()
 
         '''LeaderElection.update leaders(qc)'''
