@@ -106,7 +106,7 @@ class TestExecutor(process):
         start(validators)
 
         print("WAITING FOR TERMINATE")
-        await(received(('Terminate',), from_=network_playground))
+        await(received(('Terminate',)))
         output("Received terminate, informing all validators and network playground")
         send(('Done',), to=network_playground)
         send(('Done',), to=validators)
