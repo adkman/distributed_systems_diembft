@@ -83,7 +83,7 @@ class Validator (process):
     # Broadcast the timeout message
     def send_timeout_msg(timeout_msg):
         LOGGER.log('Validator: send_timeout_message', timeout_msg)
-        send(('Timeout', timeout_msg, [x for x in range(len(self.replicas))],
+        send(('Timeout', timeout_msg, [x for x in range(config['nvalidators'])],
               self.pacemaker.current_round), to=network_playground)
         LOGGER.log_event('Sent', 'Timeout', timeout_msg, self.replicas)
 
@@ -142,7 +142,7 @@ class Validator (process):
 
             if True:
                 # if self.pacemaker.current_round != 5 and self.pacemaker.current_round != 6:
-                send(('Proposal', proposal_msg, [x for x in range(len(self.replicas))],
+                send(('Proposal', proposal_msg, [x for x in range(config['nvalidators'])],
                       self.pacemaker.current_round), to=network_playground)
                 LOGGER.log_event("Sent", "Proposal",
                                  proposal_msg, self.replicas)
