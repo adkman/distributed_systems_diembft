@@ -65,7 +65,9 @@ class TestExecutor(process):
                 self.round_config,
                 proc_to_uid,
                 vid_to_proc,
-                self.liveness_bound
+                self.liveness_bound,
+                config_id,
+                test_executor_id,
             )
         )
         start(network_playground)
