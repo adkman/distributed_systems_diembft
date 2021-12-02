@@ -126,8 +126,7 @@ def main():
     config_id = 0
     for config in test_generator_configs:
 
-        scenario_module = __import__("scenario_"+str(config_id))
-        # scenario_module = __import__("scenario_random")
+        scenario_module = __import__("scenarios_"+str(config_id))
         test_executor_config = getattr(scenario_module, "test_executor_config")
         test_executor_id = 0
         for scenario in test_executor_config:

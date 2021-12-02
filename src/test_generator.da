@@ -190,7 +190,7 @@ def main():
                       config['step1_enum_order'],
                       config['step2_enum_order'],
                       config['step3_enum_order'],
-                      '../test_executor_configs/scenario_' +
+                      '../test_executor_configs/scenarios_' +
                       str(config_id)+".da",
                       config['number_of_partitions'],
                       config['maximum_messages_to_drop'])
