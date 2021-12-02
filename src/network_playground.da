@@ -7,7 +7,7 @@ class NetworkPlayground(process):
         self.vid_to_proc = vid_to_proc
         self.count_terminal_round_messages = set()
         self.commit_tracker = dict()  # <round, commit_acks[]>
-        self.recent_commit_round = 0
+        self.recent_committed_blocks_proposed_round = 0
         # liveness property is violated if there is no commit for proposal in liveness_bound number of rounds
         self.liveness_bound = liveness_bound
         self.config = config
@@ -80,7 +80,8 @@ class NetworkPlayground(process):
         if curr_round == len(self.round_config):
             print(self.proc_to_uid[src_proc], "Entered round", curr_round)
 
-        if curr_round > self.recent_commit_round + self.liveness_bound:
+        if curr_round > self.recent_committed_blocks_proposed_round + self.liveness_bound:
+            print("LIVENESS VIOLATED", curr_round)
             send(('LivenessViolation'), to=parent())
 
         if curr_round >= len(self.round_config):
@@ -108,15 +109,14 @@ class NetworkPlayground(process):
             self.commit_tracker[idx] = [block.payload[0]['command']]
 
         else:
-            if is_committed_block_valid(block,self.commit_tracker[idx]):
+            if is_committed_block_valid(block,self.commit_tracker[idx][-1]):
                 # print("No safety violation", curr_round)
                 self.commit_tracker[idx].append(block.payload[0]['command'])
-                pass
             else:
                 print("SAFETY VIOLATION")
                 send(('SafetyViolation', curr_round, self.commit_tracker), to=parent())
 
-        self.recent_commit_round = max(self.recent_commit_round,curr_round)
+        self.recent_committed_blocks_proposed_round = max(self.recent_committed_blocks_proposed_round,block.round)
 
     def is_committed_block_valid(block, tracker_block_command):
         return block.payload[0]['command'] == tracker_block_command

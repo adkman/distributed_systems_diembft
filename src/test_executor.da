@@ -110,7 +110,7 @@ class TestExecutor(process):
         print("Safety Violation")
         send(('Terminate',), to=curr_executor)
 
-    def receive(msg=('LivenessViolation', round, commit_tracker), from_=p):
+    def receive(msg=('LivenessViolation'), from_=p):
         print("Liveness Violation")
         send(('Terminate',), to=curr_executor)
 
