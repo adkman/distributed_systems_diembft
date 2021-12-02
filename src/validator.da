@@ -69,6 +69,7 @@ class Validator (process):
         # self.proposal_msgs_cache = []  # round number is the index
 
         self.syncingup = False
+        self.issendingsync = False
 
         Cryptography.private_key = self.private_key
         Cryptography.proc_to_uid = self.proc_to_uid
@@ -81,6 +82,8 @@ class Validator (process):
         LOGGER.log(replicas[validator_id])
         process_new_round_event(None)
         await(received(('Done',), from_=parent()))
+        await(self.syncingup == False)
+        await(self.issendingsync == False)
         self.pacemaker.stop_timer(self.pacemaker.current_round)
         output("Validator", self.validator_id, "is exiting")
 
@@ -326,8 +329,8 @@ class Validator (process):
         signature_verified = Cryptography.get_verified_message(
             timeout_msg.tmo_info.author_signature, public_keys_validators[src_vid])
 
-        # if not(self.pacemaker.current_round == timeout_msg.tmo_info.round):
-        #     return
+        if not(self.pacemaker.current_round == timeout_msg.tmo_info.round):
+            return
 
         if signature_verified is not None:
             LOGGER.log_action("Verified TimeoutMsg signature", True)
@@ -378,9 +381,7 @@ class Validator (process):
             LOGGER.log_action("Verified TimeoutMsg signature", False)
 
     def receive(msg=('sync_up_request', round, to_round), from_=p):
-        # blocks_to_send = []
-        # TODO: self.pace.cur_round
-        # print("current round and proposal message blocks round",self.pacemaker.current_round, prop_mesg.block.round)
+        self.issendingsync = True
         for i in range(round, to_round):
             # print("sending", self.proposal_msg_cache[i].block.round)
             print(i, "is the sent round")
@@ -397,20 +398,13 @@ class Validator (process):
             #     print('Not incr round since no QC and no TC', i-1)
             #     send(('incr_round', i-1), to=p)
             #     await(received(('Increment_done' + str(i-1) + '_' + str(self.proc_to_uid[p])), from_=p))
-
-        # print("ALL props are sent")
-        # send(('All_blocks_sent',to_round-1 ), to=p)
-        # await(received(('All_blocks_received',), from_=p))
+        self.issendingsync = False
 
     def receive(msg=('incr_round', round_num), from_=p):
         self.pacemaker.start_timer(round_num)
         send(('Increment_done' + str(round_num) + '_' + str(self.uniq_vid)), to=p)
         print('Incremented round to ', self.pacemaker.current_round)
 
-    # def receive(msg=('All_blocks_sent', i), from_=p):
-    #     # TODO: Cache TC and sent --- or think about this case
-    #     self.pacemaker.current_round = i
-    #     send(('All_blocks_received',), to=p)
 
     def receive(msg=('block_to_sync_up', proposal_msg, i), from_=p):
 
@@ -451,7 +445,6 @@ class Validator (process):
             '''if P.block.round 6= round ∨ P.sender 6= leader ∨ P.block.author 6= leader then
                     return'''
 
-            print(proposal_msg.block.round,round, self.proc_to_uid[replicas[proposal_msg.sender]] , leader, self.proc_to_uid[replicas[proposal_msg.block.author]] , leader)
             if proposal_msg.block.round != round or self.proc_to_uid[replicas[proposal_msg.sender]] != leader or self.proc_to_uid[replicas[proposal_msg.block.author]] != leader:
                 LOGGER.log("ROUND PROPOSAL EARLY EXIT", proposal_msg.block.round,
                         round, replicas[proposal_msg.sender], leader)
