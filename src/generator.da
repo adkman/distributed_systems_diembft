@@ -16,12 +16,14 @@ class TestGenerator():
                     step1_limit,
                     step2_limit,
                     step3_limit,
-                    enum_order,
+                    step1_enum_order,
+                    step2_enum_order,
+                    step3_enum_order,
                     file_name,
                     number_of_partitions,
                     maximum_messages_to_drop):
     
-        partitions = self.generate_partitions(number_of_nodes,number_of_twins,number_of_partitions,enum_order,step1_limit)
+        partitions = self.generate_partitions(number_of_nodes,number_of_twins,number_of_partitions,step1_enum_order,step1_limit)
 
         if leader_selection_type == 'twins_only':
             leaders = [i for i in range(number_of_twins)]
@@ -31,9 +33,9 @@ class TestGenerator():
             print("Leader selection type error")
             sys.exit()
 
-        leader_partitions = self.get_leader_partition_pairs(leaders, partitions, enum_order, step2_limit)
+        leader_partitions = self.get_leader_partition_pairs(leaders, partitions, step2_enum_order, step2_limit)
 
-        round_config = self.get_round_config(number_of_rounds, leader_partitions, enum_order, step3_limit)
+        round_config = self.get_round_config(number_of_rounds, leader_partitions, step3_enum_order, step3_limit)
 
         round_config_with_msg_drops = self.get_round_config_with_msg_drops(round_config, maximum_messages_to_drop)
         f = open(file_name,'w')

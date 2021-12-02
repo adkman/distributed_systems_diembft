@@ -144,14 +144,17 @@ def main():
         #               config['step1_limit'],
         #               config['step2_limit'],
         #               config['step3_limit'],
-        #               config['enum_order'],
+        #               config['step1_enum_order'],
+        #               config['step2_enum_order'],
+        #               config['step3_enum_order'],
         #               '../test_executor_configs/scenario_' +
         #               str(config_id)+".da",
         #               config['number_of_partitions'],
         #               config['maximum_messages_to_drop'])
-        # lala = __import__("scenario_0")
-        lala = __import__("scenario_random")
-        test_executor_config = getattr(lala, "test_executor_config")
+
+        scenario_module = __import__("scenario_"+str(config_id))
+        # scenario_module = __import__("scenario_random")
+        test_executor_config = getattr(scenario_module, "test_executor_config")
         test_executor_id = 0
         for scenario in test_executor_config:
             executor = new(TestExecutor)
