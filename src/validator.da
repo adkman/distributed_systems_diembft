@@ -332,29 +332,29 @@ class Validator (process):
         if signature_verified is not None:
             LOGGER.log_action("Verified TimeoutMsg signature", True)
 
-            if self.pacemaker.current_round < timeout_msg.tmo_info.round:
-                #syncup from self.pacemaker.current_round to timeout_msg.tmo_info.round Including
-                self.syncingup = True
-                print("ASKING FOR SYNCUP AFTER RECEVING TMO MSG", "Curr round", self.pacemaker.current_round, "to round", timeout_msg.tmo_info.round, "asking", timeout_msg.tmo_info.author)
-                send(('sync_up_request', self.pacemaker.current_round,
-                              timeout_msg.tmo_info.round+1), to=self.replicas[timeout_msg.tmo_info.author])
-                await(self.pacemaker.current_round == timeout_msg.tmo_info.round)
-                print("Sync up from tmo done",  "Curr round", self.pacemaker.current_round, "to round", timeout_msg.tmo_info.round, "asking", timeout_msg.tmo_info.author)
-                self.syncingup = False
+            # if self.pacemaker.current_round < timeout_msg.tmo_info.round:
+            #     #syncup from self.pacemaker.current_round to timeout_msg.tmo_info.round Including
+            #     self.syncingup = True
+            #     print("ASKING FOR SYNCUP AFTER RECEVING TMO MSG", "Curr round", self.pacemaker.current_round, "to round", timeout_msg.tmo_info.round, "asking", timeout_msg.tmo_info.author)
+            #     send(('sync_up_request', self.pacemaker.current_round,
+            #                   timeout_msg.tmo_info.round+1), to=self.replicas[timeout_msg.tmo_info.author])
+            #     await(self.pacemaker.current_round == timeout_msg.tmo_info.round)
+            #     print("Sync up from tmo done",  "Curr round", self.pacemaker.current_round, "to round", timeout_msg.tmo_info.round, "asking", timeout_msg.tmo_info.author)
+            #     self.syncingup = False
 
-                while self.recently_received_proposal is not None and  self.pacemaker.current_round < self.recently_received_proposal.block.round:
-                    print(self.pacemaker.current_round,
-                            self.recently_received_proposal.block.round)
-                    self.syncingup = True
-                    proposal_msg = self.recently_received_proposal
-                    print(validator_id, "Asking sync_up from",
-                            proposal_msg.sender, "From round", self.pacemaker.current_round, "To round",proposal_msg.block.round)
-                    send(('sync_up_request', self.pacemaker.current_round,
-                            proposal_msg.block.round+1), to=self.replicas[proposal_msg.sender])
-                    await(self.pacemaker.current_round == proposal_msg.block.round)
-                    print("sync_up done from sync_up")
+            #     while self.recently_received_proposal is not None and  self.pacemaker.current_round < self.recently_received_proposal.block.round:
+            #         print(self.pacemaker.current_round,
+            #                 self.recently_received_proposal.block.round)
+            #         self.syncingup = True
+            #         proposal_msg = self.recently_received_proposal
+            #         print(validator_id, "Asking sync_up from",
+            #                 proposal_msg.sender, "From round", self.pacemaker.current_round, "To round",proposal_msg.block.round)
+            #         send(('sync_up_request', self.pacemaker.current_round,
+            #                 proposal_msg.block.round+1), to=self.replicas[proposal_msg.sender])
+            #         await(self.pacemaker.current_round == proposal_msg.block.round)
+            #         print("sync_up done from sync_up")
 
-                    self.syncingup = False
+            #         self.syncingup = False
 
             '''process certificate qc(M.tmo info.high qc)
             process certificate qc(M.high commit qc)'''
@@ -388,14 +388,15 @@ class Validator (process):
                 print('sending', i, self.proposal_msg_cache[i].block.id)
                 send(('block_to_sync_up', self.proposal_msg_cache[i], i, ), to=p)
                 await(received(('One_block_done' + str(i) + '_' + str(self.proc_to_uid[p])), from_=p))
-            elif i in self.tc_cache:
+            # elif  i in self.tc_cache:
+            else:
                 print('sending incr round', i)
                 send(('incr_round', i), to=p)
                 await(received(('Increment_done' + str(i) + '_' + str(self.proc_to_uid[p])), from_=p))
-            else:
-                print('Not incr round since no QC and no TC', i-1)
-                send(('incr_round', i-1), to=p)
-                await(received(('Increment_done' + str(i) + '_' + str(self.proc_to_uid[p])), from_=p))
+            # else:
+            #     print('Not incr round since no QC and no TC', i-1)
+            #     send(('incr_round', i-1), to=p)
+            #     await(received(('Increment_done' + str(i-1) + '_' + str(self.proc_to_uid[p])), from_=p))
 
         # print("ALL props are sent")
         # send(('All_blocks_sent',to_round-1 ), to=p)
