@@ -6,8 +6,6 @@ from utils import todict
 class LOGGER:
 
     process_id = ""
-    replicas = []
-    clients = []
     filename = ""
 
     def log_event(event, msg_type, msg, vid=None):
@@ -48,6 +46,20 @@ class LOGGER:
             "ProcessId:", LOGGER.process_id, "|",
             "Action:", action, "|",
             "Object:", obj, "|",
+            file=f
+        )
+        f.close()
+
+    def log_network_event(curr_round, msgType, obj):
+        if obj != None and hasattr(obj, '__dict__'):
+            obj = todict(obj)
+
+        f = open(LOGGER.filename, 'a+')
+        print(
+            "Timestamp:", datetime.datetime.now(), "|",
+            "Round:", curr_round, "|",
+            "MsgType:", msgType, "|",
+            "Params:", obj,
             file=f
         )
         f.close()

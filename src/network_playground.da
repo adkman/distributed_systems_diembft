@@ -1,7 +1,12 @@
-from utils import todict
+from logger_util import LOGGER
+
 
 class NetworkPlayground(process):
+
     def setup(config, round_config, proc_to_uid, vid_to_proc, liveness_bound):
+
+        LOGGER.filename = '../logs/network_playground.log'
+
         self.round_config = round_config
         self.proc_to_uid = proc_to_uid
         self.vid_to_proc = vid_to_proc
@@ -11,10 +16,9 @@ class NetworkPlayground(process):
         # liveness property is violated if there is no commit for proposal in liveness_bound number of rounds
         self.liveness_bound = liveness_bound
         self.config = config
-        self.timeout_drop_count = dict() # <round, dict()<uid, count>>
+        self.timeout_drop_count = dict()  # <round, dict()<uid, count>>
 
     def run():
-        print("WAITING for done")
         await(received(('Done',), from_=parent()))
         output('Exiting network playground')
 
@@ -50,6 +54,8 @@ class NetworkPlayground(process):
                         self.timeout_drop_count[curr_round][src_vid] += 1
             elif drop_config['msgType'] != msgType:
                 continue
+            LOGGER.log_network_event(curr_round, msgType, [
+                                     'Message was dropped'])
             return True
         return False
 
@@ -58,9 +64,11 @@ class NetworkPlayground(process):
         current_config = self.get_current_config(curr_round)
         current_partitions = current_config['partition']
 
-        # print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions)
+        LOGGER.log_network_event(curr_round, msgType, [
+                                 'from', self.proc_to_uid[src_proc], 'to', dests])
 
-        src_partition = self.get_partition(current_partitions, self.proc_to_uid[src_proc])
+        src_partition = self.get_partition(
+            current_partitions, self.proc_to_uid[src_proc])
         for dest_vid in dests:
             dest_procs = self.vid_to_proc[dest_vid]
             for dest_proc in dest_procs:
@@ -69,54 +77,39 @@ class NetworkPlayground(process):
                 if dest_partition == src_partition and not self.drop_message(current_config['msg_drops'][src_partition], src_vid, msgType, curr_round):
                     send((msgType, msgObj, src_vid), to=dest_proc)
 
+    def is_committed_block_valid(block, tracker_block_command):
+        return block.payload[0]['command'] == tracker_block_command
+
     def receive(msg=(msgType, msgObj, dests, curr_round), from_=src_proc):
 
         if msgType == 'CommitAck':
             return
 
+        if curr_round > self.recent_committed_blocks_proposed_round + self.liveness_bound:
+            LOGGER.log_network_event(curr_round, msgType, [
+                                     'Liveness Violation detected!', 'No blocks are commited since blocks proposed in round', self.recent_committed_blocks_proposed_round])
+            send(('Terminate'), to=parent())
+
         if curr_round < len(self.round_config):
             self.relay_msg(msgType, msgObj, dests, curr_round, src_proc)
-        
-        if curr_round == len(self.round_config):
-            print(self.proc_to_uid[src_proc], "Entered round", curr_round)
-
-        if curr_round > self.recent_committed_blocks_proposed_round + self.liveness_bound:
-            print("LIVENESS VIOLATED", curr_round)
-            send(('LivenessViolation'), to=parent())
-
-        if curr_round >= len(self.round_config):
-            self.count_terminal_round_messages.add(self.proc_to_uid[src_proc]%self.config['nvalidators'])
+        else:
+            self.count_terminal_round_messages.add(
+                self.proc_to_uid[src_proc] % self.config['nvalidators'])
             if len(self.count_terminal_round_messages) >= self.config['nvalidators']:
-                print('SHOULD TERMINATE NOW')
+                LOGGER.log_network_event(curr_round, msgType, [
+                                         'All rounds executed, sending terminate to test executer!'])
                 send(('Terminate',), to=parent())
-
-    # def receive(msg=('CommitAck', commitMsg, curr_round), from_=src_proc):
-    #     output('CommitAck', commitMsg, curr_round, src_proc)
-        # if curr_round not in self.commit_tracker:
-        #     self.commit_tracker[curr_round] = []
-        # else:
-        #     # TODO: define is_commited_block_valid funtion
-        #     if is_committed_block_valid(M.committed_block, commit_tracker[round][-1]):
-        #         self.commit_tracker[curr_round].append()
-        #     else:
-        #         send(('SafetyViolation', curr_round, self.commit_tracker), to=self.executor)
-
-        # if len(self.commit_tracker[curr_round]) >= 2*config['nfaulty']+1:
-        #     self.recent_commit_round = curr_round
 
     def receive(msg=('CommitAck', idx, block, curr_round,), from_=src_proc):
         if idx not in self.commit_tracker:
             self.commit_tracker[idx] = [block.payload[0]['command']]
-
         else:
-            if is_committed_block_valid(block,self.commit_tracker[idx][-1]):
-                # print("No safety violation", curr_round)
+            if is_committed_block_valid(block, self.commit_tracker[idx][-1]):
                 self.commit_tracker[idx].append(block.payload[0]['command'])
             else:
-                print("SAFETY VIOLATION")
-                send(('SafetyViolation', curr_round, self.commit_tracker), to=parent())
+                LOGGER.log_network_event(curr_round, msgType, [
+                                         'Safety Violation detected!', 'Inconsistency in the transactions committed to ledger at index', idx])
+                send(('Terminate',), to=parent())
 
-        self.recent_committed_blocks_proposed_round = max(self.recent_committed_blocks_proposed_round,block.round)
-
-    def is_committed_block_valid(block, tracker_block_command):
-        return block.payload[0]['command'] == tracker_block_command
+        self.recent_committed_blocks_proposed_round = max(
+            self.recent_committed_blocks_proposed_round, block.round)

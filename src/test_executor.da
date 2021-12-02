@@ -3,17 +3,18 @@ import shutil
 import sys
 from typing import DefaultDict
 
-from cryptography import Cryptography
-from validator import Validator
-from network_playground import NetworkPlayground
-
 sys.path.append('../test_executor_configs')
 sys.path.append('../test_generator_config')
+
+from cryptography import Cryptography
+from network_playground import NetworkPlayground
 from test_generator_config import test_generator_configs
+from validator import Validator
+
 
 class TestExecutor(process):
 
-    def setup(scenario, config, config_id, test_executor_id, curr_executor):
+    def setup(scenario, config, config_id, test_executor_id):
         self.nvalidators = int(config['nvalidators'])
         self.nfaulty = int(config['nfaulty'])
         self.liveness_bound = int(config['liveness_bound'])
@@ -24,10 +25,7 @@ class TestExecutor(process):
         for round in range(len(scenario)):
             self.round_to_leader[round] = scenario[round]['Leader']
 
-        print(self.round_to_leader)
-
     def run():
-
         private_keys_validators = {}
         public_keys_validators = {}
 
@@ -100,19 +98,10 @@ class TestExecutor(process):
 
         start(validators)
 
-        print("WAITING FOR TERMINATE")
-        await(received(('Terminate',)))
+        await(received(('Terminate',), from_=network_playground))
         output("Received terminate, informing all validators and network playground")
         send(('Done',), to=network_playground)
         send(('Done',), to=validators)
-
-    def receive(msg=('SafetyViolation', round, commit_tracker), from_=p):
-        print("Safety Violation")
-        send(('Terminate',), to=curr_executor)
-
-    def receive(msg=('LivenessViolation'), from_=p):
-        print("Liveness Violation")
-        send(('Terminate',), to=curr_executor)
 
 
 def main():
@@ -126,13 +115,12 @@ def main():
     config_id = 0
     for config in test_generator_configs:
 
-        scenario_module = __import__("scenarios_"+str(config_id))
+        scenario_module = __import__("scenarios_" + str(config_id))
         test_executor_config = getattr(scenario_module, "test_executor_config")
         test_executor_id = 0
         for scenario in test_executor_config:
             executor = new(TestExecutor)
-            setup({executor}, (scenario, config,
-                               config_id, test_executor_id, executor))
+            setup({executor}, (scenario, config, config_id, test_executor_id))
             start(executor)
 
             test_executor_id += 1

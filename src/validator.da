@@ -26,13 +26,13 @@ class Validator (process):
         network_playground
     ):
 
-        LOGGER.replicas = replicas
         LOGGER.process_id = "validator_" + str(validator_id)
         LOGGER.filename = '../logs/config' + str(config_id) + '/' + str(test_executor_id) + '/' \
             + "validator_" + str(uniq_vid)  # + ".log"
         if uniq_vid > validator_id:
             LOGGER.filename += "_TwinOf_" + str(validator_id)
         LOGGER.filename += ".log"
+
         LOGGER.log_action("Initial configuration", config)
 
         self.id_block = dict()
