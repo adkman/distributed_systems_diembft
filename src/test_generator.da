@@ -70,8 +70,8 @@ class TestGenerator():
                 new_list = []
                 for j in range(len(round_config)):
                     for k in range(len(leader_partitions)):
-                        # new_list.append(copy.deepcopy(round_config[j])+[leader_partitions[k]][:])
-                        new_list.append(round_config [j]+[leader_partitions[k]])
+                        new_list.append(copy.deepcopy(round_config[j])+[leader_partitions[k]][:])
+                        # new_list.append(round_config [j]+[leader_partitions[k]])
                 round_config = new_list
 
         if size > len(round_config):
@@ -151,12 +151,14 @@ class TestGenerator():
                 scenario[i]['msg_drops'] = msg_drops
                 for partition in scenario[i]['partition']:
                     number_of_msg_drops = random.randint(0,maximum_messages_to_drop)
-                    msg_drop = []
+                    partition_msg_drop = []
                     for i in range(number_of_msg_drops):
                         msgType = random.choice(msgTypes)
                         validator = random.choice(partition)
-                        msg_drop.append({'msgType': msgType, 'validator': validator})
-                    msg_drops.append(msg_drop)
+                        msg_drop = {'msgType': msgType, 'validator': validator}
+                        if msg_drop not in partition_msg_drop:
+                            partition_msg_drop.append(msg_drop)
+                    msg_drops.append(list(partition_msg_drop))
                 # print(round)
 
         return round_config
