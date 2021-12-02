@@ -57,11 +57,6 @@ class TestExecutor(process):
                 private_keys_validators[vid] = private_key
                 public_keys_validators[vid] = public_key
 
-        for v in validators:
-            private_key, public_key = Cryptography.generate_key()
-            private_keys_validators[v] = private_key
-            public_keys_validators[v] = public_key
-
         network_playground = new(NetworkPlayground)
         setup(
             {network_playground},
