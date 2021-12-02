@@ -148,17 +148,24 @@ class TestGenerator():
             for i, round in enumerate(scenario):
                 msg_drops = []
                 '''Index of msg_drops is the partition number'''
-                scenario[i]['msg_drops'] = msg_drops
                 for partition in scenario[i]['partition']:
                     number_of_msg_drops = random.randint(0,maximum_messages_to_drop)
                     partition_msg_drop = []
-                    for i in range(number_of_msg_drops):
+                    for j in range(number_of_msg_drops):
                         msgType = random.choice(msgTypes)
-                        validator = random.choice(partition)
+                        if msgType == "Proposal":
+                            if scenario[i]['Leader'] not in partition:
+                                msgType = random.choice(msgTypes[1:])
+                                validator = random.choice(partition)
+                            else:
+                                validator = scenario[i]['Leader']
+                        else:
+                            validator = random.choice(partition)
                         msg_drop = {'msgType': msgType, 'validator': validator}
                         if msg_drop not in partition_msg_drop:
                             partition_msg_drop.append(msg_drop)
                     msg_drops.append(list(partition_msg_drop))
+                scenario[i]['msg_drops'] = msg_drops
                 # print(round)
 
         return round_config
