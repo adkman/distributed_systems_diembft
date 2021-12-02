@@ -9,6 +9,7 @@ class NetworkPlayground(process):
         # liveness property is violated if there is no commit for proposal in liveness_bound number of rounds
         self.liveness_bound = liveness_bound
         self.config = config
+        self.timeout_drop_count = dict() # <round, dict()<uid, count>>
 
     def run():
         print("WAITING for done")
@@ -31,13 +32,22 @@ class NetworkPlayground(process):
                 return idx
         return None
 
-    def drop_message(drop_configs, src_vid, msgType):
+    def drop_message(drop_configs, src_vid, msgType, curr_round):
         for drop_config in drop_configs:
-            if drop_config['msgType'] != 'WILDCARD' and drop_config['msgType'] != msgType:
+            if drop_config['validator'] != src_vid:
                 continue
-            if drop_config['validator'] != 'WILDCARD' and drop_config['validator'] != src_vid:
+            if drop_config['msgType'] == 'Timeout' and msgType == 'Timeout':
+                if curr_round not in self.timeout_drop_count:
+                    self.timeout_drop_count[curr_round] = {src_vid: 1}
+                elif src_vid not in self.timeout_drop_count[curr_round]:
+                    self.timeout_drop_count[curr_round][src_vid] = 1
+                else:
+                    if self.timeout_drop_count[curr_round][src_vid] >= self.config['timeout_max_drop_count']:
+                        continue
+                    else:
+                        self.timeout_drop_count[curr_round][src_vid] += 1
+            elif drop_config['msgType'] != msgType:
                 continue
-            # print('DROPPING', src_vid, msgType)
             return True
         return False
 
@@ -54,13 +64,16 @@ class NetworkPlayground(process):
             for dest_proc in dest_procs:
                 dest_partition = self.get_partition(
                     current_partitions, self.proc_to_uid[dest_proc])
-                if dest_partition == src_partition and not self.drop_message(current_config['msg_drops'][src_partition], src_vid, msgType):
+                if dest_partition == src_partition and not self.drop_message(current_config['msg_drops'][src_partition], src_vid, msgType, curr_round):
                     send((msgType, msgObj, src_vid), to=dest_proc)
 
     def receive(msg=(msgType, msgObj, dests, curr_round), from_=src_proc):
 
         if curr_round < len(self.round_config):
             self.relay_msg(msgType, msgObj, dests, curr_round, src_proc)
+        
+        if curr_round == len(self.round_config):
+            print(self.proc_to_uid[src_proc], "Entered round", curr_round)
 
         # if curr_round > self.recent_commit_round + self.liveness_bound:
         #     send(('LivenessViolation'), to=parent())
