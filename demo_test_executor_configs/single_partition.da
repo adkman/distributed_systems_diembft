@@ -1,156 +1,29 @@
 test_executor_config =  [
     [
         {
-            "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
+            "Leader": 1,
+            "partition": [[0, 1, 2, 3, 4]],
+            "msg_drops": [[]]
+        },
+        {
+            "Leader": 2,
+            "partition": [[0, 1, 2, 3, 4]],
+            "msg_drops": [[]]
         },
         {
             "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
+            "partition": [[0, 1, 2, 3, 4]],
+            "msg_drops": [[]]
         },
         {
-            "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
+            "Leader": 0,
+            "partition": [[0, 1, 2, 3, 4]],
+            "msg_drops": [[]]
         },
         {
-            "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
-        },
-        {
-            "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
-        },
-        {
-            "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
-        },
-        {
-            "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
-        },
-        {
-            "Leader": 3,
-            "partition": [
-                [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            ],
-            "msg_drops": [
-                []
-            ]
+            "Leader": 2,
+            "partition": [[0, 1, 2, 3, 4]],
+            "msg_drops": [[]]
         }
     ]
 ]
