@@ -12,6 +12,8 @@ from test_generator_config import test_generator_configs
 from validator import Validator
 
 
+
+
 class TestExecutor(process):
 
     def setup(scenario, config, config_id, test_executor_id):
@@ -37,9 +39,8 @@ class TestExecutor(process):
         ledger_path = '../ledgers/config' + \
             str(config_id) + "/" + str(test_executor_id)
 
-        # if os.path.exists(log_path):# and os.path.isdir(log_path):
         shutil.rmtree(log_path, ignore_errors=True)
-        # if os.path.exists(ledger_path):# and os.path.isdir(ledger_path):
+
         shutil.rmtree(ledger_path, ignore_errors=True)
 
         os.makedirs(ledger_path)
@@ -103,10 +104,8 @@ class TestExecutor(process):
 
 def main():
 
-    # if os.path.exists('../logs/'):# and os.path.isdir('../logs/'):
     shutil.rmtree('../logs/', ignore_errors=True)
 
-    # if os.path.exists('../ledgers/'):# and os.path.isdir('../ledgers/'):
     shutil.rmtree('../ledgers/', ignore_errors=True)
 
     config_id = 0

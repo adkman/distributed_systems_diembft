@@ -1,32 +1,34 @@
-#Generator
-import shutil
-import random
-import os
-import json
-import sys
+# Generator
 import copy
+import json
+import os
+import random
+import shutil
+import sys
 
 sys.path.append('../test_generator_config')
+
 from test_generator_config import test_generator_configs
 
 class TestGenerator():
 
-    def __init__(   self,
-                    number_of_nodes,
-                    number_of_twins,
-                    number_of_rounds,
-                    leader_selection_type,
-                    step1_limit,
-                    step2_limit,
-                    step3_limit,
-                    step1_enum_order,
-                    step2_enum_order,
-                    step3_enum_order,
-                    file_name,
-                    number_of_partitions,
-                    maximum_messages_to_drop):
-    
-        partitions = self.generate_partitions(number_of_nodes,number_of_twins,number_of_partitions,step1_enum_order,step1_limit)
+    def __init__(self,
+                 number_of_nodes,
+                 number_of_twins,
+                 number_of_rounds,
+                 leader_selection_type,
+                 step1_limit,
+                 step2_limit,
+                 step3_limit,
+                 step1_enum_order,
+                 step2_enum_order,
+                 step3_enum_order,
+                 file_name,
+                 number_of_partitions,
+                 maximum_messages_to_drop):
+
+        partitions = self.generate_partitions(
+            number_of_nodes, number_of_twins, number_of_partitions, step1_enum_order, step1_limit)
 
         if leader_selection_type == 'twins_only':
             leaders = [i for i in range(number_of_twins)]
@@ -36,41 +38,46 @@ class TestGenerator():
             print("Leader selection type error")
             sys.exit()
 
-        leader_partitions = self.get_leader_partition_pairs(leaders, partitions, step2_enum_order, step2_limit)
+        leader_partitions = self.get_leader_partition_pairs(
+            leaders, partitions, step2_enum_order, step2_limit)
 
-        round_config = self.get_round_config(number_of_rounds, leader_partitions, step3_enum_order, step3_limit)
+        round_config = self.get_round_config(
+            number_of_rounds, leader_partitions, step3_enum_order, step3_limit)
 
-        round_config_with_msg_drops = self.get_round_config_with_msg_drops(round_config, maximum_messages_to_drop)
-        f = open(file_name,'w')
+        round_config_with_msg_drops = self.get_round_config_with_msg_drops(
+            round_config, maximum_messages_to_drop)
+        f = open(file_name, 'w')
         json_frmt = json.dumps(round_config_with_msg_drops, indent=4)
-        print("test_executor_config = ",json_frmt, file = f)
+        print("test_executor_config = ", json_frmt, file=f)
 
-    def get_leader_partition_pairs(self,leaders,partitions,enum_order,size):
+    def get_leader_partition_pairs(self, leaders, partitions, enum_order, size):
         leader_partition = list()
         for leader in leaders:
             for partition in partitions:
-                leader_partition.append({"Leader":leader, "partition":partition})
+                leader_partition.append(
+                    {"Leader": leader, "partition": partition})
         if size > len(leader_partition):
             size = len(leader_partition)
         if enum_order == 'deterministic':
             return leader_partition[0:size]
         elif enum_order == 'random':
-            return random.sample(leader_partition,size)
+            return random.sample(leader_partition, size)
         else:
             print("Leader selection type error")
             sys.exit()
 
-    def get_round_config(self,number_of_rounds,leader_partitions,enum_order,size):
+    def get_round_config(self, number_of_rounds, leader_partitions, enum_order, size):
         round_config = list()
 
         for i in range(number_of_rounds):
             if len(round_config) == 0:
-                round_config = [[i] for i in leader_partitions] 
+                round_config = [[i] for i in leader_partitions]
             else:
                 new_list = []
                 for j in range(len(round_config)):
                     for k in range(len(leader_partitions)):
-                        new_list.append(copy.deepcopy(round_config[j])+[leader_partitions[k]][:])
+                        new_list.append(copy.deepcopy(
+                            round_config[j])+[leader_partitions[k]][:])
                         # new_list.append(round_config [j]+[leader_partitions[k]])
                 round_config = new_list
 
@@ -79,34 +86,36 @@ class TestGenerator():
         if enum_order == "deterministic":
             return round_config[0:size]
         elif enum_order == 'random':
-            return random.sample(round_config , size) 
+            return random.sample(round_config, size)
         else:
             print("Enum type error")
             sys.exit()
 
-    def generate_all_subsets(self,nodes , number_of_twins, number_of_partitions):
+    def generate_all_subsets(self, nodes, number_of_twins, number_of_partitions):
         n = len(nodes) - number_of_twins
         if number_of_partitions == len(nodes):
-            return (tuple([(x, ) for x in nodes ]), )
+            return (tuple([(x, ) for x in nodes]), )
         subsets = set()
         for i in range(len(nodes)):
-            partials = self.generate_all_subsets(nodes[:i] + nodes[i + 1:], number_of_twins, number_of_partitions )
+            partials = self.generate_all_subsets(
+                nodes[:i] + nodes[i + 1:], number_of_twins, number_of_partitions)
             for partial in partials:
                 for p in range(len(partial)):
-                    partition = partial[:p] + (partial[p] + (nodes[i], ), ) + partial[p + 1:]
+                    partition = partial[:p] + \
+                        (partial[p] + (nodes[i], ), ) + partial[p + 1:]
                     subsets.add(partition)
         return subsets
 
-    def validate(self,partition, number_of_nodes, number_of_twins):
+    def validate(self, partition, number_of_nodes, number_of_twins):
         for p in partition:
             unique_nodes = set()
             for node in p:
-                unique_nodes.add(node%number_of_nodes)
+                unique_nodes.add(node % number_of_nodes)
             if len(unique_nodes) >= 2*number_of_twins+1:
                 return True
         return False
 
-    def unique_subsets(self,subsets, number_of_nodes, number_of_twins):
+    def unique_subsets(self, subsets, number_of_nodes, number_of_twins):
         u = set()
         all = set()
         for x in subsets:
@@ -118,17 +127,15 @@ class TestGenerator():
             t.sort()
             if self.validate(t, number_of_nodes, number_of_twins):
                 u.add(tuple(t))
-                
+
         return u
 
-
-    def generate_partitions(self,number_of_nodes, number_of_twins, number_of_partitions, enum_order, sample_size):
+    def generate_partitions(self, number_of_nodes, number_of_twins, number_of_partitions, enum_order, sample_size):
         nodes = [i for i in range(number_of_nodes+number_of_twins)]
-        subsets = self.generate_all_subsets(nodes, number_of_twins, 
-                                        number_of_partitions)
-        all_valid_partitions =  self.unique_subsets(subsets
-                                                , number_of_nodes, number_of_twins)
-
+        subsets = self.generate_all_subsets(nodes, number_of_twins,
+                                            number_of_partitions)
+        all_valid_partitions = self.unique_subsets(
+            subsets, number_of_nodes, number_of_twins)
 
         if sample_size > len(all_valid_partitions):
             sample_size = len(all_valid_partitions)
@@ -149,7 +156,8 @@ class TestGenerator():
                 msg_drops = []
                 '''Index of msg_drops is the partition number'''
                 for partition in scenario[i]['partition']:
-                    number_of_msg_drops = random.randint(0,maximum_messages_to_drop)
+                    number_of_msg_drops = random.randint(
+                        0, maximum_messages_to_drop)
                     partition_msg_drop = []
                     for j in range(number_of_msg_drops):
                         msgType = random.choice(msgTypes)

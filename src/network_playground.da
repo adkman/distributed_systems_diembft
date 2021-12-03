@@ -28,7 +28,8 @@ class NetworkPlayground(process):
         await(received(('Done',), from_=parent()))
         output('Exiting network playground')
         end = time.time()
-        LOGGER.log_action("Elapsed time for this scenario", str(end - start) + ' s')
+        LOGGER.log_action("Elapsed time for this scenario",
+                          str(end - start) + ' s')
 
     def get_current_config(curr_round):
         if curr_round < len(self.round_config):
@@ -64,7 +65,6 @@ class NetworkPlayground(process):
                 continue
             LOGGER.log_network_event(curr_round, msgType, [
                                      'Message was dropped'])
-            # print("Dropping ", drop_config['msgType'])
             return True
         return False
 
@@ -75,16 +75,6 @@ class NetworkPlayground(process):
 
         LOGGER.log_network_event(curr_round, msgType, [
                                  'from', self.proc_to_uid[src_proc], 'to', dests])
-        # if msgType == 'Proposal' and msgObj.block.qc is not None:
-        #     print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions, 'txn', msgObj.block.payload[0]['command'], 'blockid', msgObj.block.id, 'qc', msgObj.block.qc.vote_info.id)
-        # elif msgType == 'Proposal' and msgObj.block.qc is None:
-        #     print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions, 'txn', msgObj.block.payload[0]['command'], 'blockid', msgObj.block.id, 'qc', 'None')
-        # elif msgType == 'Vote':
-        #     print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions, 'vote for block', msgObj.vote_info.id)
-        # elif msgType == 'Timeout':
-        #     print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions)
-        # else:
-        #     print('Round', curr_round, msgType, 'from', self.proc_to_uid[src_proc], 'to', dests, 'partitions', current_partitions)
 
         src_partition = self.get_partition(
             current_partitions, self.proc_to_uid[src_proc])
@@ -94,10 +84,6 @@ class NetworkPlayground(process):
                 dest_partition = self.get_partition(
                     current_partitions, self.proc_to_uid[dest_proc])
                 if dest_partition == src_partition and not self.drop_message(current_config['msg_drops'][src_partition], src_vid, msgType, curr_round):
-                    # if src_vid == dest_vid and self.proc_to_uid[src_proc] != self.proc_to_uid[dest_proc]:
-                    #     print('dropped oops')
-                    #     return
-                    # print('not dropped')
                     send((msgType, msgObj, src_vid), to=dest_proc)
 
     def is_committed_block_valid(block, tracker_block_command):
@@ -138,46 +124,16 @@ class NetworkPlayground(process):
 
         self.recent_committed_blocks_proposed_round = max(
             self.recent_committed_blocks_proposed_round, block.round)
+
     def is_committed_block_valid(block, tracker_block_command):
         return block.payload[0]['command'] == tracker_block_command
 
-    # def receive(msg=('sync_up_request', from_round, to_round, dest), from_=src_proc):
-
-    #     src_uid = self.proc_to_uid[src_proc]
-    #     current_config = self.get_current_config(curr_round)
-    #     current_partitions = current_config['partition']
-
-    #     src_partition = self.get_partition(current_partitions, src_uid)
-    #     for dest_vid in dests:
-    #         dest_procs = self.vid_to_proc[dest_vid]
-    #         for dest_proc in dest_procs:
-    #             dest_partition = self.get_partition(
-    #                 current_partitions, self.proc_to_uid[dest_proc])
-    #             if dest_partition == src_partition and not self.drop_message(current_config['msg_drops'][src_partition], src_vid, msgType, curr_round):
-    #                 send((msgType, msgObj, src_vid), to=dest_proc)
-
     def receive(msg=(msgType, sync_obj), from_=srcProc):
-        src_vid = self.proc_to_uid[srcProc]% self.config['nvalidators']
+        src_vid = self.proc_to_uid[srcProc] % self.config['nvalidators']
         dest_vid = sync_obj['send_to']
-        # current_partitions = current_config['partition']
-        # src_partition = self.get_partition(
-        #     current_partitions, self.proc_to_uid[src_proc])
         dest_procs = self.vid_to_proc[dest_vid]
-        # for dest_proc in dest_procs:
-        #     dest_partition = self.get_partition(
-        #             current_partitions, self.proc_to_uid[dest_proc])
         for dest_proc in dest_procs:
-            # if msgType == 'sync_up_request':
-            #     print("RECEIVED SYNCUP REQUEST IN NETWORK PLAYGROUND", sync_obj)
-            #     # if dest_partition == src_partition:
-            #         # send(('sync_up_request', {"round":sync_obj['from_round'], "to_round":sync_obj['to_round'] , "from":src_vid, "proposal_msg": sync_obj["proposal_msg"]}), to=dest_proc)
-            #     send((msgType, sync_obj), to=dest_proc)
-            # if msgType == 'block_to_sync_up':
-            #     print("SENDING EACH BLOCK")
-            #     send((msgType, sync_obj), to =dest_proc)
-
-            # if msgType == 'incr_round':
             if msgType.startswith('One_block_done') or msgType.startswith('Increment_done'):
-                send((msgType), to = dest_proc)
+                send((msgType), to=dest_proc)
             else:
-                send((msgType, sync_obj), to =dest_proc)
+                send((msgType, sync_obj), to=dest_proc)
