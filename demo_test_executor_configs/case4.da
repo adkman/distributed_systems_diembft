@@ -1,0 +1,39 @@
+test_executor_config = [
+    [
+        {
+            "Leader": 0,
+            "partition": [[0, 2, 3],[1, 4]],
+            "msg_drops": [[],[]]
+        },
+        {
+            "Leader": 0,
+            "partition": [[0, 2, 3],[1, 4]],
+            "msg_drops": [[],[]]
+        },
+        {
+            "Leader": 0,
+            "partition": [[0, 2, 3],[1, 4]],
+            "msg_drops": [[],[]]
+        },
+        {
+            "Leader": 0,
+            "partition": [[0, 2, 3],[1, 4]],
+            "msg_drops": [[],[]]
+        },
+        {
+            "Leader": 0,
+            "partition": [[0, 2, 3],[1, 4]],
+            "msg_drops": [[],[]]
+        },
+        {
+            "Leader": 0,
+            "partition": [[0, 2, 3],[1, 4]],
+            "msg_drops": [[],[]]
+        },
+        {
+            "Leader": 0,
+            "partition": [[0, 2, 3],[1, 4]],
+            "msg_drops": [[],[]]
+        }
+    ]
+]
