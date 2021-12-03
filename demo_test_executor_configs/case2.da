@@ -1,0 +1,34 @@
+test_executor_config =  [
+   [
+       {
+           "Leader": 1,
+           "partition": [[0, 1, 2, 3, 4]],
+           "msg_drops": [[{"msgType": "Timeout", "validator": 1}]]
+       },
+       {
+           "Leader": 1,
+           "partition": [[0, 1, 2, 3, 4]],
+           "msg_drops": [[{"msgType": "Timeout", "validator": 0}]]
+       },
+       {
+           "Leader": 1,
+           "partition": [[0, 1, 2, 3, 4]],
+           "msg_drops": [[{"msgType": "Proposal", "validator": 1}]]
+       },
+       {
+           "Leader": 1,
+           "partition": [[0, 1, 2, 3, 4]],
+           "msg_drops": [[{"msgType": "Vote", "validator": 2}, {"msgType": "Timeout", "validator": 2}]]
+       },
+       {
+           "Leader": 1,
+           "partition": [[0, 1, 2, 3, 4]],
+           "msg_drops": [[]]
+       },
+       {
+           "Leader": 1,
+           "partition": [[0, 1, 2, 3, 4]],
+           "msg_drops": [[{"msgType": "Timeout", "validator": 2}, {"msgType": "Proposal", "validator": 1}]]
+       }
+   ]
+]
